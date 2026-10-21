@@ -22,7 +22,11 @@ details{margin-top:8px}
 @media (max-width:600px){#panel{top:auto;bottom:0;left:0;right:0;width:auto;max-height:48vh;border-radius:14px 14px 0 0;padding:10px 12px;font-size:15px}
 #panel.min{max-height:none}#panel.min>*:not(h1):not(#tog){display:none}
 #tog{display:block;position:absolute;top:8px;right:10px;border:0;background:#eef;border-radius:6px;padding:4px 8px}
-h1{font-size:16px;padding-right:60px}.maplibregl-ctrl-top-right{top:0}select,input,button{font-size:16px}}</style></head><body><div id="map"></div>
+h1{font-size:16px;padding-right:60px}.maplibregl-ctrl-top-right{top:0}select,input,button{font-size:16px}}#fiche{margin-top:8px}#fiche .card{background:#fff8ec;border:1px solid #f0d9a8;border-radius:8px;padding:8px}
+.lvl{display:inline-block;padding:2px 8px;border-radius:10px;color:#fff;font-weight:bold}
+#fiche table{border-collapse:collapse;width:100%;font-size:12px}#fiche td,#fiche th{border-bottom:1px solid #eee;padding:2px 3px;text-align:left}
+.btn{background:#08519c;color:#fff;border:0;border-radius:6px;padding:7px 10px;margin:4px 4px 0 0;cursor:pointer}
+.prevday{border-left:4px solid #ccc;padding:3px 6px;margin:4px 0}</style></head><body><div id="map"></div>
 <div id="panel"><button id="tog" onclick="this.parentNode.classList.toggle('min');this.textContent=this.parentNode.classList.contains('min')?'▲ Ouvrir':'▼ Réduire'">▼ Réduire</button><h1>🌧️ Ouagadougou – inondations 3D</h1>
 <div class="small">Où l'eau de pluie s'accumule, heure par heure, et à quelle profondeur (simulation).</div>
 <label>Scénario<select id="scen"></select></label>
@@ -33,6 +37,8 @@ h1{font-size:16px;padding-right:60px}.maplibregl-ctrl-top-right{top:0}select,inp
 <div id="legend" class="small">Profondeur : <span style="background:#9ecae1"></span>5–20 cm <span style="background:#4292c6"></span>20–50 <span style="background:#08519c"></span>50–100 <span style="background:#3f007d"></span>&gt;1 m</div>
 <label>Rechercher un quartier<input id="q" placeholder="ex. Wemtenga, Rimkiéta, Bonheur Ville…"></label><div id="res"></div>
 <div id="info"></div>
+<details id="prevbox" open><summary><b>🌦️ Prévision 72 h (Open-Meteo)</b></summary><div id="prev" class="small">Chargement…</div></details>
+<div id="fiche"><div class="small">👆 Touchez la carte n'importe où pour ouvrir la <b>fiche parcelle</b> (risque, profondeur, PDF).</div></div>
 <details><summary><b>Sources et limites (à lire)</b></summary><div class="small" id="about"></div></details>
 </div>
 <script src="app.js"></script>
