@@ -1,0 +1,10 @@
+{
+"2020-09-05":{"label":"5 sept. 2020 (90,5 mm observés, Somgandé)","start":"2020-09-05T03:00","rain":[0,0,0,1,10,35,28,12,4.5],"src":"Observé: 90,5 mm 04h30-08h00 (station Somgandé, L'Observateur Paalga). Répartition horaire reconstituée (synthétique)."},
+"2022-08-03":{"label":"3 août 2022 (Wemtenga, Zone 1)","start":"2022-08-03T13:00","rain":[0,0,4,19,14,7,3],"src":"Cumul 47 mm = max 24h d'août 2022 à la station 65503 (le 4, infoclimat) ; horaire calé sur ERA5 (pic 15h UTC). Estimation."},
+"2024-08-16":{"label":"16 août 2024 (Rimkiéta, Toécin)","start":"2024-08-16T13:00","rain":[0,0,6,20,14,6,4],"src":"Cumul supposé 50 mm (borne: max 24h août 2024 = 56 mm le 7) ; forme horaire ERA5 (pic 16h UTC). Estimation."},
+"2025-07-24":{"label":"24 juil. 2025 (Kalgondin)","start":"2025-07-24T13:00","rain":[0,0,4,12,11,5,3],"src":"Cumul supposé 35 mm (borne: max 24h juil. 2025 = 41 mm le 22) ; forme ERA5 (pic 16-17h UTC). Estimation."},
+"2026-08-03":{"label":"Nuit du 2-3 août 2026 (Bonheur-Ville, Nagrin)","start":"2026-08-03T01:00","rain":[0,2,6,14,13,6,3,1],"src":"Cumul supposé 45 mm (borne: max 24h août 2026 = 46 mm le 19) ; forme ERA5 (pic 04-06h UTC). Estimation."},
+"T10":{"label":"Pluie de projet 10 ans (~100 mm)","start":"2000-01-01T00:00","rain":[0,8,38,30,14,7,3],"src":"Pluie de projet synthétique ~100 mm (ordre de grandeur Gumbel pour Ouaga, à confirmer avec IDF ANAM)."},
+"T50":{"label":"Pluie de projet 50 ans (~140 mm)","start":"2000-01-01T00:00","rain":[0,11,52,42,20,10,5],"src":"Synthétique ~140 mm, à confirmer."},
+"T100":{"label":"Pluie de projet 100 ans (~165 mm, proche 1er sept. 2009 en intensité)","start":"2000-01-01T00:00","rain":[0,13,62,50,23,11,6],"src":"Synthétique ~165 mm, à confirmer. Pour mémoire 1er sept. 2009: 263 mm."}
+}

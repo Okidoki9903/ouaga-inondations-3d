@@ -1,0 +1,28 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ouaga Inondations 3D – où l'eau s'accumule, heure par heure</title>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/pmtiles@3.2.1/dist/pmtiles.js"></script>
+<script src="https://unpkg.com/deck.gl@9.0.38/dist.min.js"></script>
+<style>
+body{margin:0;font:14px system-ui,sans-serif}#map{position:absolute;inset:0}
+#panel{position:absolute;top:10px;left:10px;width:330px;max-height:calc(100% - 40px);overflow:auto;background:#fffffff2;border-radius:10px;padding:12px;box-shadow:0 2px 10px #0003}
+h1{font-size:17px;margin:0 0 6px}select,input{width:100%;box-sizing:border-box;padding:6px;margin:4px 0}
+#legend span{display:inline-block;width:22px;height:10px}.small{font-size:12px;color:#444}
+#res div{cursor:pointer;padding:3px;border-bottom:1px solid #eee}#res div:hover{background:#eef}
+#info{background:#f3f6fb;padding:6px;border-radius:6px;margin-top:6px}
+details{margin-top:8px}
+</style></head><body><div id="map"></div>
+<div id="panel"><h1>🌧️ Ouagadougou – inondations 3D</h1>
+<div class="small">Où l'eau de pluie s'accumule, heure par heure, et à quelle profondeur (simulation).</div>
+<label>Scénario<select id="scen"></select></label>
+<div id="src" class="small"></div>
+<label>Heure : <b id="hl"></b><input type="range" id="hour" min="0" max="0" value="0"></label>
+<button id="play">▶ Lecture</button> <label class="small"><input type="checkbox" id="maxck" style="width:auto"> Afficher le maximum</label>
+<div id="rain" class="small"></div>
+<div id="legend" class="small">Profondeur : <span style="background:#9ecae1"></span>5–20 cm <span style="background:#4292c6"></span>20–50 <span style="background:#08519c"></span>50–100 <span style="background:#3f007d"></span>&gt;1 m</div>
+<label>Rechercher un quartier<input id="q" placeholder="ex. Wemtenga, Rimkiéta, Bonheur Ville…"></label><div id="res"></div>
+<div id="info"></div>
+<details><summary><b>Sources et limites (à lire)</b></summary><div class="small" id="about"></div></details>
+</div>
+<script src="app.js"></script></body></html>
