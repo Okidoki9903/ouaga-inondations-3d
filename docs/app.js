@@ -25,6 +25,6 @@ document.getElementById('play').onclick=e=>{if(timer){clearInterval(timer);timer
  e.target.textContent='⏸ Pause';timer=setInterval(()=>{const h=document.getElementById('hour');h.value=(+h.value+1)%(+h.max+1);draw()},900)};
 const norm=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
 document.getElementById('q').oninput=e=>{const q=norm(e.target.value);const r=document.getElementById('res');r.innerHTML='';if(!q)return;
- PLACES.filter(p=>norm(p.name).includes(q)).slice(0,8).forEach(p=>{const d=document.createElement('div');d.textContent=p.name;d.onclick=()=>{sel=p;map.flyTo({center:[p.lon,p.lat],zoom:15,pitch:60});showInfo()};r.appendChild(d)})};
+ PLACES.filter(p=>norm(p.name).includes(q)).slice(0,8).forEach(p=>{const d=document.createElement('div');d.textContent=p.name;d.onclick=()=>{sel=p;map.flyTo({center:[p.lon,p.lat],zoom:15,pitch:60});showInfo();document.getElementById('info').scrollIntoView({block:'nearest'})};r.appendChild(d)})};
 let sel=null;
 function showInfo(){if(!sel)return;const st=sel.stats[cur];document.getElementById('info').innerHTML=`<b>${sel.name}</b><br>Scénario : ${META.scen[cur].label}<br>Profondeur max (rayon 400 m) : <b>${st[0].toFixed(2)} m</b><br>Surface sous &gt;20 cm : <b>${st[1].toFixed(1)} ha</b><br><span class="small">${sel.reported?('Inondation signalée : '+sel.reported):''}</span>`}

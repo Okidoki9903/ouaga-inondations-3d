@@ -1,2 +1,3 @@
 .v/
 *.npz
+__pycache__/

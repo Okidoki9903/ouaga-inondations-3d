@@ -1,19 +1,29 @@
 <!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ouaga Inondations 3D – où l'eau s'accumule, heure par heure</title>
+<meta name="description" content="Carte 3D interactive : où l'eau de pluie s'accumule à Ouaga lors des grandes pluies (2020–2026, pluies de projet). Cherchez votre quartier. Simulation indicative.">
+<meta property="og:type" content="website"><meta property="og:locale" content="fr_FR"><meta property="og:url" content="https://ouaga-inondations-3d.akwalife.workers.dev/">
+<meta property="og:title" content="Ouagadougou : inondations en 3D, heure par heure"><meta property="og:description" content="Carte 3D interactive : où l'eau de pluie s'accumule à Ouaga lors des grandes pluies (2020–2026, pluies de projet). Cherchez votre quartier. Simulation indicative.">
+<meta property="og:image" content="https://ouaga-inondations-3d.akwalife.workers.dev/og.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Vue 3D de Ouagadougou avec les zones inondées en bleu">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Ouagadougou : inondations en 3D, heure par heure"><meta name="twitter:description" content="Carte 3D interactive : où l'eau de pluie s'accumule à Ouaga lors des grandes pluies (2020–2026, pluies de projet). Cherchez votre quartier. Simulation indicative."><meta name="twitter:image" content="https://ouaga-inondations-3d.akwalife.workers.dev/og.jpg">
+<link rel="icon" href="favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#08519c">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/pmtiles@3.2.1/dist/pmtiles.js"></script>
 <script src="https://unpkg.com/deck.gl@9.0.38/dist.min.js"></script>
 <style>
 body{margin:0;font:14px system-ui,sans-serif}#map{position:absolute;inset:0}
-#panel{position:absolute;top:10px;left:10px;width:330px;max-height:calc(100% - 40px);overflow:auto;background:#fffffff2;border-radius:10px;padding:12px;box-shadow:0 2px 10px #0003}
+#panel{z-index:5;position:absolute;top:10px;left:10px;width:330px;max-height:calc(100% - 40px);overflow:auto;background:#fffffff2;border-radius:10px;padding:12px;box-shadow:0 2px 10px #0003}
 h1{font-size:17px;margin:0 0 6px}select,input{width:100%;box-sizing:border-box;padding:6px;margin:4px 0}
 #legend span{display:inline-block;width:22px;height:10px}.small{font-size:12px;color:#444}
 #res div{cursor:pointer;padding:3px;border-bottom:1px solid #eee}#res div:hover{background:#eef}
 #info{background:#f3f6fb;padding:6px;border-radius:6px;margin-top:6px}
 details{margin-top:8px}
-</style></head><body><div id="map"></div>
-<div id="panel"><h1>🌧️ Ouagadougou – inondations 3D</h1>
+#tog{display:none}
+@media (max-width:600px){#panel{top:auto;bottom:0;left:0;right:0;width:auto;max-height:48vh;border-radius:14px 14px 0 0;padding:10px 12px;font-size:15px}
+#panel.min{max-height:none}#panel.min>*:not(h1):not(#tog){display:none}
+#tog{display:block;position:absolute;top:8px;right:10px;border:0;background:#eef;border-radius:6px;padding:4px 8px}
+h1{font-size:16px;padding-right:60px}.maplibregl-ctrl-top-right{top:0}select,input,button{font-size:16px}}</style></head><body><div id="map"></div>
+<div id="panel"><button id="tog" onclick="this.parentNode.classList.toggle('min');this.textContent=this.parentNode.classList.contains('min')?'▲ Ouvrir':'▼ Réduire'">▼ Réduire</button><h1>🌧️ Ouagadougou – inondations 3D</h1>
 <div class="small">Où l'eau de pluie s'accumule, heure par heure, et à quelle profondeur (simulation).</div>
 <label>Scénario<select id="scen"></select></label>
 <div id="src" class="small"></div>

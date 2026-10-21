@@ -1,5 +1,5 @@
 // Cloudflare Worker : sert docs/ (Workers Static Assets), corrige Content-Type et gère Range (PMTiles)
-const T={html:'text/html; charset=utf-8',js:'application/javascript; charset=utf-8',json:'application/json; charset=utf-8',png:'image/png',pmtiles:'application/octet-stream'};
+const T={jpg:'image/jpeg',svg:'image/svg+xml',html:'text/html; charset=utf-8',js:'application/javascript; charset=utf-8',json:'application/json; charset=utf-8',png:'image/png',pmtiles:'application/octet-stream'};
 export default {async fetch(req,env){
  const u=new URL(req.url);const ext=(u.pathname.endsWith('/')?'html':u.pathname.split('.').pop());
  const res=await env.ASSETS.fetch(req);if(!res.ok&&res.status!==206)return res;
