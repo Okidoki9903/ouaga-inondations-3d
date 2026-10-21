@@ -48,7 +48,7 @@ map.on('load',async()=>{
  const q=new URLSearchParams(location.search);if(q.get('lat'))pinAt(+q.get('lon'),+q.get('lat'),null,true)});
 const PILLS=['Zone 1','Tanghin','Nioko','Somgandé','Wemtenga','Rimkiéta','Toécin','Kalgondin','Bonheur Ville','Nagrin','Gounghin','Ouaga 2000','Dassasgho','Pissy'];
 function pills(){const p=$('pills');const mk=(t,f,rep)=>{const b=document.createElement('button');b.className='pill'+(rep?' rep':'');b.textContent=t;b.onclick=()=>{[...p.children].forEach(c=>c.classList.remove('on'));b.classList.add('on');f()};p.appendChild(b);return b};
- mk("Vue d'ensemble",()=>{map.flyTo({...OV,duration:2500});PIN=null;selPlace=null;$('left').classList.add('hidden');history.replaceState(null,'',location.pathname);layers()}).classList.add('on');
+ mk("Vue d'ensemble",()=>{map.flyTo({...OV,duration:2500,padding:{top:0,bottom:0,left:0,right:0}});PIN=null;selPlace=null;$('left').classList.add('hidden');history.replaceState(null,'',location.pathname);layers()}).classList.add('on');
  const norm=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
  for(const n of PILLS){const pl=PLACES.find(x=>norm(x.name)===norm(n));if(pl)mk(pl.name,()=>pinPlace(pl),!!pl.reported)}}
 function pinPlace(p){selPlace=p;pinAt(p.lon,p.lat,p,true)}
