@@ -1,5 +1,5 @@
 // Cloudflare Worker : sert docs/ (Workers Static Assets), corrige Content-Type et gère Range (PMTiles)
-const T={jpg:'image/jpeg',svg:'image/svg+xml',html:'text/html; charset=utf-8',js:'application/javascript; charset=utf-8',json:'application/json; charset=utf-8',png:'image/png',pmtiles:'application/octet-stream'};
+const T={css:'text/css; charset=utf-8',jpg:'image/jpeg',svg:'image/svg+xml',html:'text/html; charset=utf-8',js:'application/javascript; charset=utf-8',json:'application/json; charset=utf-8',png:'image/png',pmtiles:'application/octet-stream'};
 async function forecast(ctx){
  const key=new Request('https://cache.local/forecast-v1');const c=caches.default;let r=await c.match(key);if(r)return r;
  const api='https://api.open-meteo.com/v1/forecast?latitude=12.37&longitude=-1.52&hourly=precipitation&forecast_days=3&timezone=GMT&models=ecmwf_ifs025,gfs_seamless,icon_seamless,meteofrance_seamless';

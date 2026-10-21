@@ -6,40 +6,46 @@
 <meta property="og:image" content="https://ouaga-inondations-3d.akwalife.workers.dev/og.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Vue 3D de Ouagadougou avec les zones inondées en bleu">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Ouagadougou : inondations en 3D, heure par heure"><meta name="twitter:description" content="Carte 3D interactive : où l'eau de pluie s'accumule à Ouaga lors des grandes pluies (2020–2026, pluies de projet). Cherchez votre quartier. Simulation indicative."><meta name="twitter:image" content="https://ouaga-inondations-3d.akwalife.workers.dev/og.jpg">
 <link rel="icon" href="favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#08519c">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/pmtiles@3.2.1/dist/pmtiles.js"></script>
 <script src="https://unpkg.com/deck.gl@9.0.38/dist.min.js"></script>
-<style>
-body{margin:0;font:14px system-ui,sans-serif}#map{position:absolute;inset:0}
-#panel{z-index:5;position:absolute;top:10px;left:10px;width:330px;max-height:calc(100% - 40px);overflow:auto;background:#fffffff2;border-radius:10px;padding:12px;box-shadow:0 2px 10px #0003}
-h1{font-size:17px;margin:0 0 6px}select,input{width:100%;box-sizing:border-box;padding:6px;margin:4px 0}
-#legend span{display:inline-block;width:22px;height:10px}.small{font-size:12px;color:#444}
-#res div{cursor:pointer;padding:3px;border-bottom:1px solid #eee}#res div:hover{background:#eef}
-#info{background:#f3f6fb;padding:6px;border-radius:6px;margin-top:6px}
-details{margin-top:8px}
-#tog{display:none}
-@media (max-width:600px){#panel{top:auto;bottom:0;left:0;right:0;width:auto;max-height:48vh;border-radius:14px 14px 0 0;padding:10px 12px;font-size:15px}
-#panel.min{max-height:none}#panel.min>*:not(h1):not(#tog){display:none}
-#tog{display:block;position:absolute;top:8px;right:10px;border:0;background:#eef;border-radius:6px;padding:4px 8px}
-h1{font-size:16px;padding-right:60px}.maplibregl-ctrl-top-right{top:0}select,input,button{font-size:16px}}#fiche{margin-top:8px}#fiche .card{background:#fff8ec;border:1px solid #f0d9a8;border-radius:8px;padding:8px}
-.lvl{display:inline-block;padding:2px 8px;border-radius:10px;color:#fff;font-weight:bold}
-#fiche table{border-collapse:collapse;width:100%;font-size:12px}#fiche td,#fiche th{border-bottom:1px solid #eee;padding:2px 3px;text-align:left}
-.btn{background:#08519c;color:#fff;border:0;border-radius:6px;padding:7px 10px;margin:4px 4px 0 0;cursor:pointer}
-.prevday{border-left:4px solid #ccc;padding:3px 6px;margin:4px 0}</style></head><body><div id="map"></div>
-<div id="panel"><button id="tog" onclick="this.parentNode.classList.toggle('min');this.textContent=this.parentNode.classList.contains('min')?'▲ Ouvrir':'▼ Réduire'">▼ Réduire</button><h1>🌧️ Ouagadougou – inondations 3D</h1>
-<div class="small">Où l'eau de pluie s'accumule, heure par heure, et à quelle profondeur (simulation).</div>
-<label>Scénario<select id="scen"></select></label>
-<div id="src" class="small"></div>
-<label>Heure : <b id="hl"></b><input type="range" id="hour" min="0" max="0" value="0"></label>
-<button id="play">▶ Lecture</button> <label class="small"><input type="checkbox" id="maxck" style="width:auto"> Afficher le maximum</label>
-<div id="rain" class="small"></div>
-<div id="legend" class="small">Profondeur : <span style="background:#9ecae1"></span>5–20 cm <span style="background:#4292c6"></span>20–50 <span style="background:#08519c"></span>50–100 <span style="background:#3f007d"></span>&gt;1 m</div>
-<label>Rechercher un quartier<input id="q" placeholder="ex. Wemtenga, Rimkiéta, Bonheur Ville…"></label><div id="res"></div>
-<div id="info"></div>
-<details id="prevbox" open><summary><b>🌦️ Prévision 72 h (Open-Meteo)</b></summary><div id="prev" class="small">Chargement…</div></details>
-<div id="fiche"><div class="small">👆 Touchez la carte n'importe où pour ouvrir la <b>fiche parcelle</b> (risque, profondeur, PDF).</div></div>
-<details><summary><b>Sources et limites (à lire)</b></summary><div class="small" id="about"></div></details>
-</div>
+<link href="style.css" rel="stylesheet">
+</head><body>
+<div id="map"></div>
+<header id="top">
+ <div class="brand">💧 <b>Ouaga Inondations 3D</b><span class="sub">simulation heure par heure</span></div>
+ <select id="scen" title="Scénario"></select>
+ <div class="search"><input id="q" placeholder="🔍 Rechercher un quartier…" autocomplete="off"><div id="res"></div></div>
+ <div id="pills"></div>
+</header>
+<aside id="left" class="panel hidden">
+ <div class="kicker">📍 LIEU ÉPINGLÉ</div><button id="lclose" class="x">✕</button>
+ <div id="pinname" class="big"></div><div id="pinsub" class="muted"></div>
+ <div id="pindepth" class="depth"></div><div class="muted" id="pinwhen"></div>
+ <svg id="pinchart" viewBox="0 0 300 90" preserveAspectRatio="none"></svg>
+ <div id="fiche"></div>
+</aside>
+<aside id="right" class="panel">
+ <button id="rtog" class="x">▾</button>
+ <div class="kicker">EN CE MOMENT DANS LA SIMULATION</div>
+ <div class="grid">
+  <div class="stat"><b id="s_area">–</b><span>km² sous &gt;5 cm d'eau</span></div>
+  <div class="stat"><b id="s_bld">–</b><span>bâtiments touchés (&gt;10 cm)</span></div>
+  <div class="stat"><b id="s_rain">–</b><span>mm de pluie cette heure</span></div>
+  <div class="stat"><b id="s_lake">–</b><span>cm : hausse moy. des barrages</span></div>
+ </div>
+ <div class="rows"><div><span>Scénario</span><b id="s_label"></b></div><div><span>Cumul</span><b id="s_cum"></b></div><div class="small" id="src"></div></div>
+ <label class="chk"><input type="checkbox" id="maxck"> Afficher le maximum de l'événement</label>
+ <div id="legend"><span class="sw" style="background:#6fdcff"></span>peu profond <span class="sw" style="background:#0a6fd6"></span>&gt;1 m <span class="sw dash"></span>limite</div>
+ <details id="prevbox"><summary>🌦️ Prévision 72 h (Open-Meteo)</summary><div id="prev" class="small">Chargement…</div></details>
+ <details><summary>ℹ️ Sources et limites</summary><div class="small" id="about"></div></details>
+</aside>
+<footer id="tl">
+ <div class="ctl"><button id="play">▶</button><select id="speed"><option value="1">1×</option><option value="2" selected>2×</option><option value="4">4×</option></select>
+  <div id="hl" class="ts"></div><input type="range" id="hour" min="0" max="0" value="0" step="0.02"></div>
+ <div id="sparks"></div>
+</footer>
 <script src="app.js"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "accd6d09c8e84cd091b78c80030b27c0"}'></script></body></html>
