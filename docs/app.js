@@ -5,7 +5,7 @@ map.addControl(new maplibregl.NavigationControl());
 const overlay=new deck.MapboxOverlay({interleaved:true,layers:[]});map.addControl(overlay);
 map.on('load',async()=>{
  map.addSource('b',{type:'vector',url:'pmtiles://'+location.origin+'/data/buildings.pmtiles'});
- map.addLayer({id:'b3d',type:'fill-extrusion',source:'b','source-layer':'b',minzoom:13,paint:{'fill-extrusion-color':'#d9cbb5','fill-extrusion-height':['get','h'],'fill-extrusion-opacity':0.85}});
+ map.addLayer({id:'b3d',type:'fill-extrusion',source:'b','source-layer':'b',minzoom:14,paint:{'fill-extrusion-color':'#d9cbb5','fill-extrusion-height':['get','h'],'fill-extrusion-opacity':0.85}});
  META=await (await fetch('data/meta.json')).json();PLACES=await (await fetch('data/places.json')).json();
  const s=document.getElementById('scen');
  for(const k of META.order){const o=document.createElement('option');o.value=k;o.textContent=META.scen[k].label;s.appendChild(o)}
