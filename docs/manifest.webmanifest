@@ -1,0 +1,3 @@
+{"name":"Ouaga Inondations 3D","short_name":"Ouaga Inond.","start_url":"/","display":"standalone","background_color":"#ffffff","theme_color":"#08519c","lang":"fr",
+"icons":[{"src":"favicon.svg","sizes":"any","type":"image/svg+xml"}],
+"share_target":{"action":"/","method":"GET","params":{"title":"title","text":"t","url":"u"}}}

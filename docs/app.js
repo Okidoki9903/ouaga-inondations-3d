@@ -45,7 +45,8 @@ map.on('load',async()=>{
  for(const k of META.order){const o=document.createElement('option');o.value=k;o.textContent=META.scen[k].label;$('scen').appendChild(o)}
  $('about').innerHTML=META.about+'<p>Fond : imagerie satellite Esri World Imagery. Hauteurs de bâtiments : estimations (3,5 / 6 / 9 m), pas des mesures.</p>';
  pills();$('scen').onchange=()=>setScen($('scen').value);setScen(META.order[0]);loadPrev();
- const q=new URLSearchParams(location.search);if(q.get('lat'))pinAt(+q.get('lon'),+q.get('lat'),null,true)});
+ const q=new URLSearchParams(location.search);if(q.get('lat'))pinAt(+q.get('lon'),+q.get('lat'),null,true);
+ const sh=[q.get('u'),q.get('url'),q.get('t'),q.get('text'),q.get('title')].filter(Boolean).join(' ');if(sh)handleLoc(sh)});
 const PILLS=['Zone 1','Tanghin','Nioko','Somgandé','Wemtenga','Rimkiéta','Toécin','Kalgondin','Bonheur Ville','Nagrin','Gounghin','Ouaga 2000','Dassasgho','Pissy'];
 function pills(){const p=$('pills');const mk=(t,f,rep)=>{const b=document.createElement('button');b.className='pill'+(rep?' rep':'');b.textContent=t;b.onclick=()=>{[...p.children].forEach(c=>c.classList.remove('on'));b.classList.add('on');f()};p.appendChild(b);return b};
  mk("Vue d'ensemble",()=>{map.flyTo({...OV,duration:2500,padding:{top:0,bottom:0,left:0,right:0}});PIN=null;selPlace=null;$('left').classList.add('hidden');history.replaceState(null,'',location.pathname);layers()}).classList.add('on');
@@ -152,3 +153,23 @@ async function pdf(){if(!window.jspdf)await loadScript('https://unpkg.com/jspdf@
  y+=4;doc.setFontSize(8.5);doc.setTextColor(80);
  const disc='AVERTISSEMENT : cette fiche est issue d\'une simulation numerique indicative (modele hydraulique simplifie, relief Copernicus GLO-30 a 30 m, pluies ERA5 / observations de presse reparties heure par heure, pluies de projet T10/T50/T100 approximatives). Elle ne tient pas compte de l\'etat reel des caniveaux, des remblais recents ni des ouvrages. Ce n\'est PAS un document officiel et ne remplace ni une etude technique ni les avis de l\'ANAM, de la Protection civile ou de la Mairie. Sources : OpenStreetMap (contributeurs), Microsoft/Google Open Buildings, ESA WorldCover, Copernicus DEM, ECMWF ERA5. Site : '+location.origin;
  doc.text(doc.splitTextToSize(disc,186),12,y);doc.save(`fiche-inondation-ouaga-${F.lat.toFixed(4)}_${F.lon.toFixed(4)}.pdf`)}
+
+// ---------- Liens de localisation ----------
+function toast(m,err){const t=$('toast');t.textContent=m;t.className=err?'err':'';t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',err?6000:3000)}
+function inCov(p){const[b0,b1,b2,b3]=META.bounds;return p.lon>b0&&p.lon<b2&&p.lat>b1&&p.lat<b3}
+async function handleLoc(text){if(!text)return false;const link=LOC.findLink(text);let p=LOC.parseLoc(text)||LOC.parseLoc(link);
+ if(!p&&LOC.needsResolve(link)){toast('Lecture du lien…');try{const r=await (await fetch('/api/resolve?u='+encodeURIComponent(link))).json();
+  if(r.error){toast('Lien non pris en charge ('+r.error+').',true);return false}p=LOC.parseLoc(r.url)||(r.hint&&LOC.parseLoc(r.hint))}catch(e){}}
+ if(!p){toast("Impossible de trouver des coordonnées dans ce texte. Collez un lien Google Maps / Apple Plans / WhatsApp, ou « 12.37, -1.52 ».",true);return false}
+ if(!inCov(p)){toast(`Ce point (${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}) est hors de la zone couverte (Ouagadougou et environs).`,true);return false}
+ if(!META){setTimeout(()=>handleLoc(text),500);return true}
+ toast('📍 Point trouvé : '+p.lat.toFixed(5)+', '+p.lon.toFixed(5));selPlace=null;$('res').innerHTML='';
+ if(MOB)$('q').blur();await pinAt(p.lon,p.lat,null,true);return true}
+const looksLoc=s=>/https?:\/\/|geo:|^\s*-?\d{1,2}\.\d+\s*[, ;]\s*-?\d{1,3}\.\d+\s*$|[23456789CFGHJMPQRVWX]{4,8}\+[23456789CFGHJMPQRVWX]{2}/i.test(s);
+$('q').addEventListener('keydown',e=>{if(e.key==='Enter'){const v=$('q').value;if(looksLoc(v)||!$('res').firstChild)handleLoc(v);else $('res').firstChild.click()}});
+$('q').addEventListener('paste',()=>setTimeout(()=>{const v=$('q').value;if(looksLoc(v))handleLoc(v)},30));
+$('paste').onclick=async()=>{let t='';try{t=await navigator.clipboard.readText()}catch(e){}
+ if(!t||!looksLoc(t))t=prompt('Collez ici un lien Google Maps, Apple Plans ou une position WhatsApp :',t||'');if(t)handleLoc(t)};
+$('geo').onclick=()=>{if(!navigator.geolocation){toast('Géolocalisation indisponible sur cet appareil.',true);return}toast('Recherche de votre position…');
+ navigator.geolocation.getCurrentPosition(pos=>{const p={lat:pos.coords.latitude,lon:pos.coords.longitude};if(!inCov(p)){toast('Votre position est hors de la zone couverte (Ouagadougou).',true);return}selPlace=null;pinAt(p.lon,p.lat,null,true)},
+  e=>toast(e.code===1?'Accès à la position refusé.':'Position introuvable.',true),{enableHighAccuracy:true,timeout:15000})};
