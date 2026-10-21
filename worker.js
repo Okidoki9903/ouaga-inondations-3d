@@ -11,6 +11,8 @@ const ALLOW=/^(maps\.app\.goo\.gl|goo\.gl|g\.co|maps\.google\.[a-z.]+|www\.googl
 const J=(o,st=200)=>new Response(JSON.stringify(o),{status:st,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'public, max-age=86400'}});
 async function resolve(link){let u;try{u=new URL(link)}catch(e){return J({error:'lien invalide'},400)}
  for(let i=0;i<6;i++){if(u.protocol!=='https:'&&u.protocol!=='http:'||!ALLOW.test(u.hostname))return J({error:'hôte non autorisé',host:u.hostname},400);
+  if(/\/sorry\//.test(u.pathname)&&u.searchParams.get('continue'))u=new URL(u.searchParams.get('continue'));
+  if(i>0&&!/^(maps\.app\.goo\.gl|goo\.gl|g\.co|apple\.co)$/i.test(u.hostname))return J({url:u.toString()});
   const r=await fetch(u.toString(),{redirect:'manual',headers:{'User-Agent':'Mozilla/5.0 (compatible; OuagaInondations/1.0)','Accept-Language':'fr'}});
   const loc=r.headers.get('Location');if(r.status>=300&&r.status<400&&loc){u=new URL(loc,u);
    const cont=u.searchParams.get('continue');if(/consent\./.test(u.hostname)&&cont){u=new URL(cont)}continue}
