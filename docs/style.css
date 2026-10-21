@@ -43,7 +43,7 @@ details{margin-top:8px;border-top:1px solid #f1f5f9;padding-top:6px}summary{curs
  #scen{max-width:none;width:100%;flex:1 1 100%;min-width:0;font-size:13px}.search{width:100%;order:3}#q{font-size:16px;padding:5px 10px}#pills{order:4;flex-basis:100%}
  #right{top:auto;bottom:118px;left:6px;right:6px;width:auto;max-height:42vh;padding:10px}#right.min{max-height:44px;overflow:hidden}#rtog{display:block}
  #right.min .grid,#right.min .rows,#right.min .chk,#right.min #legend,#right.min details{display:none}
- #left{top:auto;bottom:118px;left:6px;right:6px;width:auto;max-height:36vh;z-index:6;padding:10px}#pinchart{height:60px}.depth{font-size:24px}
+ #left{top:auto;bottom:118px;left:6px;right:6px;width:auto;max-height:none;overflow:visible;z-index:6;padding:10px}#fiche table,#fiche svg,#fiche .small{display:none}#pinwhen{display:none}#pinchart{height:60px}.depth{font-size:24px}
  #tl{left:6px;right:6px;bottom:6px;padding:6px 8px}.ts{min-width:0;font-size:11px}#sparks{grid-template-columns:1fr 1fr;gap:6px}.sp svg{height:22px}
  .maplibregl-ctrl-top-right{top:140px;right:0}.maplibregl-ctrl-bottom-right{bottom:110px}
 }
