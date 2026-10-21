@@ -16,14 +16,15 @@ function olcEncode(lat,lon){let a=lat+90,b=lon+180,s='',r=20;for(let i=0;i<5;i++
 function parseLoc(s,ref){if(!s)return null;s=String(s).trim();let u=s;try{u=decodeURIComponent(s)}catch(e){}
  let m;
  if(m=u.match(new RegExp('!3d'+N+'!4d'+N)))return ok(m[1],m[2]);
- if(m=u.match(new RegExp('[?&](?:q|ll|sll|query|center|destination|daddr|saddr|coordinate|cp|address)='+'(?:loc:)?'+N+SEP+N)))return ok(m[1],m[2]);
+ if(m=u.match(new RegExp('[?&](?:q|ll|sll|query|center|destination|daddr|coordinate|cp|address)='+'(?:loc:)?'+N+SEP+N)))return ok(m[1],m[2]);
  if(m=u.match(new RegExp('/place/'+N+SEP+N)))return ok(m[1],m[2]);
  if(m=u.match(new RegExp('/search/'+N+SEP+N)))return ok(m[1],m[2]);
+ if(m=u.match(/\b([23456789CFGHJMPQRVWX]{2,8}\+[23456789CFGHJMPQRVWX]{0,3})\b/i)){const d=olcDecode(m[1],ref||{lat:12.37,lon:-1.52});if(d)return d}
  if(m=u.match(new RegExp('@'+N+','+N)))return ok(m[1],m[2]);
  if(m=u.match(new RegExp('geo:'+N+','+N)))return ok(m[1],m[2]);
  if(m=u.match(/(\d{1,2}(?:[.,]\d+)?)\s*°?\s*([NS])[\s,;]+(\d{1,3}(?:[.,]\d+)?)\s*°?\s*([EOW])/i)){const a=+m[1].replace(',','.')*(m[2].toUpperCase()=='S'?-1:1),b=+m[3].replace(',','.')*(/[OW]/i.test(m[4])?-1:1);return ok(a,b)}
  if(m=u.match(new RegExp('^\\s*'+N+'\\s*[,; ]\\s*'+N+'\\s*$')))return ok(m[1],m[2]);
- if(m=u.match(/\b([23456789CFGHJMPQRVWX]{2,8}\+[23456789CFGHJMPQRVWX]{0,3})\b/i)){const d=olcDecode(m[1],ref||{lat:12.37,lon:-1.52});if(d)return d}
+ if(m=u.match(new RegExp('[?&]saddr='+N+SEP+N)))return ok(m[1],m[2]);
  return null}
 function needsResolve(s){return /^(https?:\/\/)?(maps\.app\.goo\.gl|goo\.gl\/maps|g\.co\/kgs|maps\.apple|apple\.co)\b/i.test(String(s).trim())||(/^https?:\/\//i.test(s)&&!parseLoc(s))}
 function findLink(t){const m=String(t||'').match(/https?:\/\/\S+/);return m?m[0]:String(t||'')}
