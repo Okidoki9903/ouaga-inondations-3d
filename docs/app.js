@@ -53,7 +53,7 @@ function pills(){const p=$('pills');const mk=(t,f,rep)=>{const b=document.create
  for(const n of PILLS){const pl=PLACES.find(x=>norm(x.name)===norm(n));if(pl)mk(pl.name,()=>pinPlace(pl),!!pl.reported)}}
 function pinPlace(p){selPlace=p;pinAt(p.lon,p.lat,p,true)}
 async function pinAt(lon,lat,place,fly){PIN={lon,lat,place};$('left').classList.remove('hidden');
- if(fly)map.flyTo({center:[lon,lat],zoom:MOB?15.6:16.2,pitch:MOB?50:56,bearing:map.getBearing()-20,duration:3000,essential:true});
+ if(fly)map.flyTo({center:[lon,lat],zoom:MOB?15.6:16.2,pitch:MOB?42:56,bearing:map.getBearing()-20,duration:3000,essential:true});
  await fiche(lon,lat,false);PIN.name=place?place.name:LASTF.near;await pinSeries();layers();draw()}
 async function pinSeries(){if(!PIN||!PM)return;const[b0,b1,b2,b3]=PM.bounds;const j=Math.floor((PIN.lon-b0)/(b2-b0)*PM.w),i=Math.floor((b3-PIN.lat)/(b3-b1)*PM.h);
  const off=(i*PM.w+j)*16;const r=await fetch(`data/ser_${cur}.bin`,{headers:{Range:`bytes=${off}-${off+15}`}});PIN.ser=[...new Uint8Array(await r.arrayBuffer())].map(v=>v*0.02);PIN.k=cur}
