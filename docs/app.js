@@ -160,7 +160,8 @@ async function fiche(lon,lat,fly){if(!PM)PM=await (await fetch('data/parcel.json
  Canal / cours d'eau / talweg le plus proche (OSM) : <b>${dist<3000?Math.round(dist/10)*10+' m':'> 3 km'}</b>
  ${svg}<div class="small">Profondeur max (m) par scénario, cellule de ~40 m</div>
  <table><tr><th>Scénario</th><th>Prof. max</th><th>Heures &gt;10 cm</th></tr>${rows.map(r=>`<tr><td>${r.label}</td><td>${r.d.toFixed(2)} m</td><td>${r.h} h</td></tr>`).join('')}</table>
- <button class="btn" onclick="pdf()">📄 Télécharger la fiche PDF</button><button class="btn" onclick="navigator.share?navigator.share({title:'Fiche inondation Ouaga',url:location.href}):navigator.clipboard.writeText(location.href).then(()=>this.textContent='Lien copié ✓')">🔗 Partager</button>
+ <button class="btn wa" onclick="shareWA()">📲 Partager mon résultat sur WhatsApp</button><button class="btn" onclick="pdf()">📄 Télécharger la fiche PDF</button><button class="btn" onclick="shareNative(this)">🔗 Partager</button>
+ <button class="btn alt" onclick="openTem()">🙋 Chez moi, c'était différent</button>
  <div class="small">Simulation indicative, pas un document officiel.</div></div>
  <div class="card hv"><b>${TANK} Eau récupérable des toits</b><br><span id="fhv"></span>
  <div class="hvown">Votre toit : <input id="myroof" type="number" min="10" max="5000" value="${META.harvest.house_m2}" inputmode="numeric"> m² <span id="myroofv"></span></div></div>`;
@@ -238,3 +239,47 @@ function rainLoop(ts){requestAnimationFrame(rainLoop);if(MOB&&ts-lt<33)return;co
  // eau vivante : ré-rendu de la couche ~20-30 i/s
  if(!RM&&W.img&&ts-lastW>(MOB?66:40)){lastW=ts;layers()}}
 requestAnimationFrame(rainLoop);
+
+// ---------- Partage WhatsApp ----------
+const EVD={'2020-09-05':'le 5 septembre 2020','2022-08-03':'le 3 août 2022','2024-08-16':'le 16 août 2024','2025-07-24':'le 24 juillet 2025','2026-08-03':'dans la nuit du 2 au 3 août 2026'};
+function shareText(){const F=LASTF;if(!F)return '';const link=`${location.origin}/?lat=${F.lat.toFixed(5)}&lon=${F.lon.toFixed(5)}`;
+ const ev=F.rows.filter(r=>!r.k.startsWith('T')).sort((a,b)=>b.d-a.d)[0];const q=F.near;
+ if(!ev||ev.d<0.05){const t=F.rows.find(r=>r.k==='T100');return `Chez moi à ${q}, l'outil Ouaga Inondations 3D ne simule pas d'eau lors des grands orages 2020-2026`+(t&&t.d>=0.05?` (mais jusqu'à ${Math.round(t.d*100)} cm en pluie centennale)`:'')+`. Et chez toi ? ${link}`}
+ const mm=Math.round(sum(META.scen[ev.k].rain));
+ return `Chez moi à ${q}, l'outil Ouaga Inondations 3D dit que l'eau est montée à ${Math.round(ev.d*100)} cm ${EVD[ev.k]||ev.label} (orage de ${mm} mm). Et chez toi ? ${link}`}
+function shareWA(){const t=shareText();if(!t)return;window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank','noopener')}
+async function shareNative(b){const t=shareText();try{if(navigator.share){await navigator.share({title:'Ouaga Inondations 3D',text:t});return}}catch(e){if(e.name==='AbortError')return}
+ try{await navigator.clipboard.writeText(t);b.textContent='Texte copié ✓'}catch(e){prompt('Copiez ce texte :',t)}}
+// ---------- Témoignage « Chez moi, c'était différent » ----------
+function openTem(){const F=LASTF;let d=$('tem');if(!d){d=document.createElement('div');d.id='tem';document.body.appendChild(d)}
+ const ev=META.order.filter(k=>!k.startsWith('T'));
+ d.innerHTML=`<form id="temf" class="temc" autocomplete="on"><button type="button" class="x" onclick="$('tem').remove()">✕</button>
+ <div class="big">🙋 Chez moi, c'était différent</div><div class="muted">Aidez-nous à corriger la simulation : dites-nous ce que vous avez vu.</div>
+ <label>Point (lat, lon)<input name="pt" required value="${F?F.lat.toFixed(5)+', '+F.lon.toFixed(5):''}" inputmode="decimal"></label>
+ <label>Quartier<input name="quartier" maxlength="80" value="${F?esc(F.near):''}"></label>
+ <label>Orage<select name="scen">${ev.map(k=>`<option value="${k}">${META.scen[k].label}</option>`).join('')}<option value="">Autre date…</option></select></label>
+ <label id="adl" style="display:none">Autre date<input name="autre_date" type="date" min="2000-01-01"></label>
+ <fieldset><legend>Hauteur d'eau devant chez vous</legend>
+ ${[['cheville','à la cheville (~10 cm)'],['genou','au genou (~50 cm)'],['cuisse','à la cuisse (~75 cm)'],['taille','à la taille (~1 m)'],['sous_porte','sous la porte'],['cour','dans la cour seulement'],['maison','entrée dans la maison']].map(([v,l])=>`<label class="rad"><input type="radio" name="hauteur" value="${v}" required> ${l}</label>`).join('')}</fieldset>
+ <label>Photo (facultatif)<input name="photo0" type="file" accept="image/*"></label>
+ <label class="rad"><input type="checkbox" name="publier" value="1"> Vous pouvez publier ma photo</label>
+ <label>Ce que vous avez vu (facultatif)<textarea name="texte" maxlength="1000" rows="3"></textarea></label>
+ <label>Contact WhatsApp (facultatif)<input name="contact" maxlength="40" inputmode="tel" placeholder="+226 …"></label>
+ <input name="site" class="hp" tabindex="-1" autocomplete="off">
+ <div class="small">🔒 Confidentialité : votre témoignage n'est pas affiché publiquement. Il sert uniquement à vérifier et améliorer la simulation. Le numéro de contact n'est utilisé que pour vous recontacter à propos de ce témoignage ; la photo n'est publiée que si vous cochez la case. Pour faire effacer vos données, écrivez-nous via le contact indiqué dans « Sources et limites ».</div>
+ <button class="btn" type="submit" id="temsub">Envoyer</button><span id="temmsg" class="small"></span></form>`;
+ const f=$('temf');f.scen.onchange=()=>{$('adl').style.display=f.scen.value?'none':'block'};
+ f.onsubmit=async e=>{e.preventDefault();const m=$('temmsg'),b=$('temsub');const pt=f.pt.value.split(/[ ,;]+/).map(Number);
+  if(pt.length<2||!isFinite(pt[0])||!isFinite(pt[1])){m.textContent='Point invalide (ex. 12.31822, -1.49668).';return}
+  const fd=new FormData();fd.set('lat',pt[0]);fd.set('lon',pt[1]);for(const k of['quartier','scen','autre_date','texte','contact','site'])fd.set(k,f[k].value);
+  fd.set('hauteur',f.querySelector('input[name=hauteur]:checked').value);fd.set('publier',f.publier.checked?'1':'0');
+  b.disabled=true;m.textContent='Envoi…';
+  try{const file=f.photo0.files[0];if(file){m.textContent='Préparation de la photo…';const j=await shrink(file);if(j)fd.set('photo',j,'photo.jpg')}
+   const r=await fetch('/api/temoignage',{method:'POST',body:fd});const o=await r.json();
+   if(o.ok){f.innerHTML='<div class="big">Merci ! 🙏</div><p>Votre témoignage a bien été reçu. Il nous aidera à corriger la carte.</p><button class="btn" type="button" onclick="$(\'tem\').remove()">Fermer</button>';window.TEMID=o.id}
+   else{m.textContent='Erreur : '+(o.error||r.status);b.disabled=false}}catch(err){m.textContent='Envoi impossible, réessayez.';b.disabled=false}}}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function shrink(file){const url=URL.createObjectURL(file);try{const im=await new Promise((ok,ko)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=ko;i.src=url});
+ let w=im.naturalWidth,h=im.naturalHeight,s=Math.min(1,1600/Math.max(w,h));const c=document.createElement('canvas');
+ for(let q of[0.82,0.72,0.6,0.5]){c.width=Math.round(w*s);c.height=Math.round(h*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+  const b=await new Promise(r=>c.toBlob(r,'image/jpeg',q));if(b&&b.size<1_500_000)return b;s*=0.8}return null}finally{URL.revokeObjectURL(url)}}

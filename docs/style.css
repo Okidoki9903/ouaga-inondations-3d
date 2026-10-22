@@ -59,3 +59,11 @@ details{margin-top:8px;border-top:1px solid #f1f5f9;padding-top:6px}summary{curs
 @media (max-width:700px){#right.min #hvbox{display:none}#fiche .card.hv .small{display:inline}#fiche svg.tank{display:inline}}
 
 #rain{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+
+.btn.wa{background:#25d366;color:#053}.btn.alt{background:#fff;color:var(--ink);border:1px solid #cbd5e1}
+#tem{position:fixed;inset:0;background:#0f172a99;z-index:30;display:flex;align-items:center;justify-content:center;padding:10px}
+.temc{position:relative;background:#fff;border-radius:12px;padding:14px;width:min(440px,100%);max-height:92vh;overflow:auto;font-size:14px}
+.temc label{display:block;margin:8px 0 0;font-weight:600}.temc input:not([type=radio]):not([type=checkbox]),.temc select,.temc textarea{display:block;width:100%;margin-top:3px;border:1px solid #cbd5e1;border-radius:6px;padding:7px;font:inherit;font-size:16px;font-weight:400}
+.temc fieldset{border:1px solid #e2e8f0;border-radius:8px;margin:8px 0;padding:6px 8px}.temc legend{font-weight:600}.temc .rad{font-weight:400;margin:4px 0}
+.temc .hp{position:absolute;left:-9999px;width:1px;height:1px}
+@media (max-width:700px){#fiche .card .btn{display:block;width:100%;margin:6px 0 0}}
