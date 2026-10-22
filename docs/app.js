@@ -266,7 +266,7 @@ function openTem(){const F=LASTF;let d=$('tem');if(!d){d=document.createElement(
  <label>Ce que vous avez vu (facultatif)<textarea name="texte" maxlength="1000" rows="3"></textarea></label>
  <label>Contact WhatsApp (facultatif)<input name="contact" maxlength="40" inputmode="tel" placeholder="+226 …"></label>
  <input name="site" class="hp" tabindex="-1" autocomplete="off">
- <div class="small">🔒 Confidentialité : votre témoignage n'est pas affiché publiquement. Il sert uniquement à vérifier et améliorer la simulation. Le numéro de contact n'est utilisé que pour vous recontacter à propos de ce témoignage ; la photo n'est publiée que si vous cochez la case. Pour faire effacer vos données, écrivez-nous via le contact indiqué dans « Sources et limites ».</div>
+ <div class="small">🔒 Confidentialité : votre témoignage n'est pas affiché publiquement. Il sert uniquement à vérifier et améliorer la simulation. Le numéro de contact n'est utilisé que pour vous recontacter à propos de ce témoignage ; la photo n'est publiée que si vous cochez la case.</div>
  <button class="btn" type="submit" id="temsub">Envoyer</button><span id="temmsg" class="small"></span></form>`;
  const f=$('temf');f.scen.onchange=()=>{$('adl').style.display=f.scen.value?'none':'block'};
  f.onsubmit=async e=>{e.preventDefault();const m=$('temmsg'),b=$('temsub');const pt=f.pt.value.split(/[ ,;]+/).map(Number);
