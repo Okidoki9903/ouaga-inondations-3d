@@ -33,6 +33,14 @@ wat=[P(shape(w['geom'])) for w in osm['water']]
 wm=rasterize([(g,1) for g in wat],(H,W),transform=T)
 # reservoirs (barrages 1-2-3): treat as storage, lower bed 2m below surface
 z-=wm*2.0
+# v2: street channels - lower road cells by OSM class (roads sit below plots; kerbs/gutters/eroded laterite lanes)
+RD={'trunk':0.4,'trunk_link':0.4,'primary':0.4,'primary_link':0.4,'secondary':0.4,'secondary_link':0.4,'tertiary':0.3,'tertiary_link':0.3,'residential':0.2,'unclassified':0.2,'living_street':0.2,'service':0.2}
+roads=json.load(open(D+'data/roads.json'));rd=np.zeros((H,W),'f4')
+for d in sorted(set(RD.values())):
+    gs=[P(LineString(r['c'])) for r in roads if RD.get(r['t'])==d]
+    m=rasterize([(g,1) for g in gs],(H,W),transform=T,all_touched=False)
+    rd=np.maximum(rd,m*d);print('roads',d,len(gs),m.sum())
+rd[wm>0]=0;z-=rd
 # buildings
 bf=np.zeros((H,W),'f4');feats=open(D+'data/buildings.geojsonl','w');n=0
 cx=[];cy=[];ca=[]
@@ -48,11 +56,21 @@ feats.close()
 cx=np.array(cx);cy=np.array(cy);ca=np.array(ca)
 c=((cx-x0)/R).astype(int);r=((y1-cy)/R).astype(int);ok=(c>=0)&(c<W)&(r>=0)&(r<H)
 np.add.at(bf,(r[ok],c[ok]),ca[ok]);bf=np.clip(bf/(R*R),0,0.9)
+# v2: Google Open Buildings v3 (CC BY 4.0, conf>=0.7); per-cell roof fraction = max(MS, Google) to fill gaps without double counting
+import pandas as pd
+ob=pd.read_csv(D+'data/ext/ob_ouaga.csv');ob=ob[ob.confidence>=0.7]
+ox,oy=tr.transform(ob.longitude.values,ob.latitude.values)
+c=((ox-x0)/R).astype(int);r=((y1-oy)/R).astype(int);ok=(c>=0)&(c<W)&(r>=0)&(r<H)
+bg=np.zeros((H,W),'f4');np.add.at(bg,(r[ok],c[ok]),ob.area_in_meters.values[ok]);bg=np.clip(bg/(R*R),0,0.9)
+print('MS mean frac',bf.mean(),'Google mean frac',bg.mean(),'n google',ok.sum())
+bf=np.maximum(bf,bg)
 print('buildings',n,'mean frac',bf.mean())
 # infiltration mm/h by WorldCover class (assumed, Sahel lateritic soils)
 inf={10:15,20:12,30:10,40:10,50:3,60:6,80:0,90:5,95:5,100:8}
 fi=np.vectorize(lambda v:inf.get(int(v),5))(wc).astype('f4')
 fi=fi*(1-bf)  # roofs impervious
+fi[rd>0]=np.minimum(fi[rd>0],2.0)  # v2: compacted/paved road surface ~2 mm/h
 n_man=(0.035+0.15*bf).astype('f4'); n_man[wc==50]=np.maximum(n_man[wc==50],0.05)
-np.savez_compressed('grid.npz',z=z,inf=fi,n=n_man,bf=bf,wm=wm,x0=x0,y1=y1,R=R,W=W,H=H)
+n_man[(rd>0)&(bf<0.3)]=0.02  # v2: smoother road channels
+np.savez_compressed('grid.npz',z=z,inf=fi,n=n_man,bf=bf,wm=wm,rd=rd,x0=x0,y1=y1,R=R,W=W,H=H)
 print('z',z.min(),z.max())

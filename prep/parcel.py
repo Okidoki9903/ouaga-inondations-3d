@@ -9,7 +9,7 @@ B=(-1.65,12.25,-1.40,12.48);OW,OH=700,645;OT=from_bounds(*B,OW,OH)
 order=list(json.load(open('scen.json')))
 def rp(a,rs=Resampling.max):
     o=np.zeros((OH,OW),'f4');reproject(a.astype('f4'),o,src_transform=T,src_crs='EPSG:32630',dst_transform=OT,dst_crs='EPSG:4326',resampling=rs);return o
-out=np.zeros((OH,OW,18),'u1')
+out=np.zeros((OH,OW,20),'u1')
 for n,k in enumerate(order):
     r=np.load(f'res_{k}.npz');d=r['d'].astype('f4');hm=r['hmax'].astype('f4');d[:,wm>0]=0;hm[wm>0]=0
     out[:,:,n]=np.clip(np.round(rp(hm)/0.02),0,255)
@@ -21,6 +21,8 @@ m=rasterize([(g,1) for g in geoms],out_shape=(OH,OW),transform=OT,all_touched=Tr
 dx=(B[2]-B[0])/OW*111320*np.cos(np.radians(12.37));dy=(B[3]-B[1])/OH*110600
 dist=distance_transform_edt(m==0,sampling=(dy,dx));dist=np.clip(dist,0,65535).astype('<u2')
 out[:,:,16:18]=dist.view('u1').reshape(OH,OW,2)
+cell=dx*dy;roof=np.clip(np.round(rp(G['bf'],Resampling.average)*cell),0,65535).astype('<u2')
+out[:,:,18:20]=roof.view('u1').reshape(OH,OW,2);print('roof m2 total',roof.sum(),'cell m2',cell)
 out.tofile('../app/docs/data/parcel.bin')
-json.dump({'w':OW,'h':OH,'bounds':B,'stride':18,'order':order,'depth_unit_m':0.02,'hours_thr_m':0.1,'waterways':len(geoms)},open('../app/docs/data/parcel.json','w'))
+json.dump({'w':OW,'h':OH,'bounds':B,'stride':20,'roof_cell_m2':round(cell),'order':order,'depth_unit_m':0.02,'hours_thr_m':0.1,'waterways':len(geoms)},open('../app/docs/data/parcel.json','w'))
 print(out.shape,len(geoms),dist.max())

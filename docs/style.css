@@ -52,3 +52,8 @@ details{margin-top:8px;border-top:1px solid #f1f5f9;padding-top:6px}summary{curs
 #toast{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:20;background:#0f172a;color:#fff;padding:8px 14px;border-radius:10px;font-size:13px;max-width:90vw;display:none;box-shadow:0 4px 14px #0004}
 #toast.err{background:#b91c1c}
 @media (max-width:700px){.pill.act{order:3;flex:1;font-size:12px;padding:5px 6px}.search{order:2}#toast{top:auto;bottom:130px}}
+
+.card.hv{background:#ecfeff;border-color:#a5f3fc}.tank{vertical-align:-2px;margin-right:2px}.tk{display:inline-block;white-space:nowrap;margin-right:6px;font-size:11px}
+.hvown{margin-top:4px;font-size:12px}.hvown input{width:62px;border:1px solid #cbd5e1;border-radius:4px;padding:2px 4px;font:inherit}
+.ht{border-collapse:collapse;width:100%;font-size:11px;margin:4px 0}.ht td,.ht th{border-bottom:1px solid #eee;padding:2px 3px;text-align:right}.ht td:first-child,.ht th:first-child{text-align:left}
+@media (max-width:700px){#right.min #hvbox{display:none}#fiche .card.hv .small{display:inline}#fiche svg.tank{display:inline}}

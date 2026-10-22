@@ -1,5 +1,5 @@
 const P=new pmtiles.Protocol();maplibregl.addProtocol('pmtiles',P.tile);
-const MOB=innerWidth<700;let META,PLACES,STATS,cur,timer=null,selPlace=null,PIN=null;
+const MOB=innerWidth<700;let HV=false,META,PLACES,STATS,cur,timer=null,selPlace=null,PIN=null;
 const $=id=>document.getElementById(id);
 const OV={center:[-1.525,12.36],zoom:MOB?11.4:12.3,pitch:25,bearing:-12};
 const style={version:8,glyphs:'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
@@ -32,6 +32,7 @@ function layers(){const L=[];const Z=map.getZoom();const B=META.bounds;
  for(const w of [wB,wA]) if(w.img&&w.op>0.01)L.push(new WaterLayer({id:'w'+(w===wA?'A':'B'),bounds:B,image:w.img,opacity:w.op,tintColor:[NIGHT*255,Z>=14.5?255:Z>=13.5?(Z-13.5)*255:0,(Z>=15?0.06:Z>=13?0.06+(15-Z)*0.03:0.12)*255],beforeId:'b-ao',textureParameters:{minFilter:'linear',magFilter:'linear'},updateTriggers:{}}));
  if(PIN)L.push(new deck.ColumnLayer({id:'pin',data:[PIN],getPosition:d=>[d.lon,d.lat],radius:MOB?14:9,elevationScale:1,getElevation:140,getFillColor:[249,115,22,235],extruded:true,material:false}),
   new deck.ScatterplotLayer({id:'pinglow',data:[PIN],getPosition:d=>[d.lon,d.lat],radiusUnits:'meters',getRadius:38,getFillColor:[249,115,22,90],stroked:true,getLineColor:[255,180,90,220],lineWidthMinPixels:2}));
+ if(HV&&PLACES){const H=META.harvest;L.push(new deck.ScatterplotLayer({id:'hv',data:PLACES.filter(p=>p.roof),getPosition:d=>[d.lon,d.lat],radiusUnits:'meters',getRadius:d=>Math.sqrt(vol(d.roof,H.annual_mm))*2.2,getFillColor:[17,24,39,120],stroked:true,getLineColor:[34,211,238,230],lineWidthMinPixels:1.5,pickable:true,onClick:i=>{pinPlace(i.object);return true}}))}
  overlay.setProps({layers:L})}
 async function showFrame(i){const S=META.scen[cur];const key=$('maxck').checked?'max':i;const im=await img(cur,key);
  if(wA.i===cur+key)return; wB={...wA};wA={i:cur+key,img:im,op:0};fadeT=performance.now();
@@ -44,6 +45,7 @@ map.on('load',async()=>{
  [META,PLACES,STATS]=await Promise.all(['meta','places','stats'].map(f=>fetch(`data/${f}.json`).then(r=>r.json())));
  for(const k of META.order){const o=document.createElement('option');o.value=k;o.textContent=META.scen[k].label;$('scen').appendChild(o)}
  $('about').innerHTML=META.about+'<p>Fond : imagerie satellite Esri World Imagery. Hauteurs de bâtiments : estimations (3,5 / 6 / 9 m), pas des mesures.</p>';
+ harvestPanel();$('hvck').onchange=e=>{HV=e.target.checked;layers()};
  pills();$('scen').onchange=()=>setScen($('scen').value);setScen(META.order[0]);loadPrev();
  const q=new URLSearchParams(location.search);if(q.get('lat'))pinAt(+q.get('lon'),+q.get('lat'),null,true);
  const sh=[q.get('u'),q.get('url'),q.get('t'),q.get('text'),q.get('title')].filter(Boolean).join(' ');if(sh)handleLoc(sh)});
@@ -55,7 +57,7 @@ function pills(){const p=$('pills');const mk=(t,f,rep)=>{const b=document.create
 function pinPlace(p){selPlace=p;pinAt(p.lon,p.lat,p,true)}
 async function pinAt(lon,lat,place,fly){PIN={lon,lat,place};$('left').classList.remove('hidden');
  if(fly)map.flyTo({center:[lon,lat],zoom:MOB?15.6:16.2,pitch:MOB?42:56,bearing:map.getBearing()-20,duration:3000,essential:true,padding:MOB?{bottom:320,top:120}:{left:300,right:290}});
- await fiche(lon,lat,false);PIN.name=place?place.name:LASTF.near;await pinSeries();layers();draw()}
+ await fiche(lon,lat,false);harvestPanel();PIN.name=place?place.name:LASTF.near;await pinSeries();layers();draw()}
 async function pinSeries(){if(!PIN||!PM)return;const[b0,b1,b2,b3]=PM.bounds;const j=Math.floor((PIN.lon-b0)/(b2-b0)*PM.w),i=Math.floor((b3-PIN.lat)/(b3-b1)*PM.h);
  const off=(i*PM.w+j)*16;const r=await fetch(`data/ser_${cur}.bin`,{headers:{Range:`bytes=${off}-${off+15}`}});PIN.ser=[...new Uint8Array(await r.arrayBuffer())].map(v=>v*0.02);PIN.k=cur}
 let zt;map.on('zoom',()=>{clearTimeout(zt);zt=setTimeout(layers,120)});
@@ -65,7 +67,7 @@ function callouts(){pops.forEach(p=>p.remove());pops.length=0;const ev={'2020-09
  const seen=new Set();for(const p of PLACES){if(!p.reported.includes(ev))continue;const n=p.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace('kalgodin','kalgondin');if(seen.has(n))continue;seen.add(n);
   pops.push(new maplibregl.Popup({closeButton:false,closeOnClick:false,className:'callout',offset:12}).setLngLat([p.lon,p.lat]).setHTML(MOB?`<b>⚠ ${p.name}</b>`:`<b>${p.name} : inondation signalée</b><span>${p.reported} · simulé : jusqu'à ${p.stats[cur][0].toFixed(1)} m</span>`).addTo(map))}}
 function setScen(k){cur=k;const S=META.scen[k];$('scen').value=k;const h=$('hour');h.max=S.hours-1;const pk=S.rain.indexOf(Math.max(...S.rain));h.value=Math.min(S.hours-1,pk+2);
- $('src').textContent=S.src;$('s_label').textContent=S.label;sparks();callouts();(PIN?pinSeries():Promise.resolve()).then(draw)}
+ $('src').textContent=S.src;$('s_label').textContent=S.label;sparks();callouts();if(PLACES)harvestPanel();ficheHV();(PIN?pinSeries():Promise.resolve()).then(draw)}
 function sparks(){const S=META.scen[cur],T=STATS[cur],n=S.hours;const ser=[['Pluie','mm/h',S.rain.slice(0,n),'#0ea5e9'],['Surface inondée','km²',T.area,'#06b6d4'],['Bâtiments touchés','',T.bld,'#f97316'],['Niveau des barrages','cm',T.lake,'#6366f1']];
  $('sparks').innerHTML=ser.map(([l,u,v,c],j)=>{const mx=Math.max(...v,1e-6);const pts=v.map((y,x)=>`${(x/(n-1)*100).toFixed(2)},${(32-y/mx*30).toFixed(2)}`).join(' ');
   return `<div class="sp" style="${MOB&&j>1?'display:none':''}"><div class="lab">${l}<b id="sv${j}"></b></div><svg viewBox="0 0 100 34" preserveAspectRatio="none"><polygon points="0,34 ${pts} 100,34" fill="${c}22"/><polyline points="${pts}" fill="none" stroke="${c}" stroke-width="1.2" vector-effect="non-scaling-stroke"/><line id="ph${j}" x1="0" x2="0" y1="0" y2="34" stroke="#0f172a" stroke-width="1" vector-effect="non-scaling-stroke"/></svg></div>`}).join('');PIN&&(PIN.u=ser)}
@@ -121,7 +123,7 @@ async function fiche(lon,lat,fly){if(!PM)PM=await (await fetch('data/parcel.json
  const[b0,b1,b2,b3]=PM.bounds;const j=Math.floor((lon-b0)/(b2-b0)*PM.w),i=Math.floor((b3-lat)/(b3-b1)*PM.h);
  const el=document.getElementById('fiche');if(i<0||j<0||i>=PM.h||j>=PM.w){el.innerHTML='<div class="card">Point hors de la zone simulée.</div>';return}
  const off=(i*PM.w+j)*PM.stride;const buf=new Uint8Array(await (await fetch('data/parcel.bin',{headers:{Range:`bytes=${off}-${off+PM.stride-1}`}})).arrayBuffer());
- const rows=PM.order.map((k,n)=>({k,label:META.scen[k].label,d:buf[n]*PM.depth_unit_m,h:buf[8+n]}));const dist=buf[16]|(buf[17]<<8);
+ const rows=PM.order.map((k,n)=>({k,label:META.scen[k].label,d:buf[n]*PM.depth_unit_m,h:buf[8+n]}));const dist=buf[16]|(buf[17]<<8);const roof=PM.stride>=20?(buf[18]|(buf[19]<<8)):0;
  const ev=rows.filter(r=>!r.k.startsWith('T'));const dmax=Math.max(...ev.map(r=>r.d));const dT=Math.max(...rows.map(r=>r.d));const L=lvl(dmax);
  const near=PLACES.map(p=>[p,hav(lat,lon,p.lat,p.lon)]).sort((a,b)=>a[1]-b[1])[0];
  LASTF={lon,lat,rows,dist,L,dmax,dT,near:near[0].name,nd:near[1]};
@@ -137,8 +139,29 @@ async function fiche(lon,lat,fly){if(!PM)PM=await (await fetch('data/parcel.json
  ${svg}<div class="small">Profondeur max (m) par scénario, cellule de ~40 m</div>
  <table><tr><th>Scénario</th><th>Prof. max</th><th>Heures &gt;10 cm</th></tr>${rows.map(r=>`<tr><td>${r.label}</td><td>${r.d.toFixed(2)} m</td><td>${r.h} h</td></tr>`).join('')}</table>
  <button class="btn" onclick="pdf()">📄 Télécharger la fiche PDF</button><button class="btn" onclick="navigator.share?navigator.share({title:'Fiche inondation Ouaga',url:location.href}):navigator.clipboard.writeText(location.href).then(()=>this.textContent='Lien copié ✓')">🔗 Partager</button>
- <div class="small">Simulation indicative, pas un document officiel.</div></div>`;
+ <div class="small">Simulation indicative, pas un document officiel.</div></div>
+ <div class="card hv"><b>${TANK} Eau récupérable des toits</b><br><span id="fhv"></span>
+ <div class="hvown">Votre toit : <input id="myroof" type="number" min="10" max="5000" value="${META.harvest.house_m2}" inputmode="numeric"> m² <span id="myroofv"></span></div></div>`;
+ const mr=$('myroof'),upd=()=>{$('myroofv').innerHTML=harvestLine(+mr.value||0)};mr.oninput=upd;LASTF.roof=roof;LASTF.upd=upd;ficheHV();
 }
+// ---------- Eau récupérable (toits) ----------
+function ficheHV(){const e=$('fhv');if(!e||!LASTF)return;e.innerHTML=harvestHTML(LASTF.roof,`Toits dans cette cellule (~${PM.roof_cell_m2||1530} m² de terrain)`);LASTF.upd&&LASTF.upd()}
+const TANK='<svg class="tank" viewBox="0 0 14 18" width="12" height="15"><ellipse cx="7" cy="3" rx="6" ry="2.2" fill="#334155"/><rect x="1" y="3" width="12" height="13" fill="#111827"/><ellipse cx="7" cy="16" rx="6" ry="2" fill="#111827"/><rect x="5.5" y="0" width="3" height="2" fill="#475569"/></svg>';
+const nf=x=>Math.round(x).toLocaleString('fr-FR');
+function storm(){const k=nearestRealStorm();return {k,mm:sum(META.scen[k].rain)}}
+function nearestRealStorm(){return cur&&!cur.startsWith('T')?cur:'2024-08-16'}
+function vol(m2,mm){return m2*mm/1000*META.harvest.capture}
+function tanks(v){const L=v*1000;return META.harvest.tanks.map(t=>`<span class="tk">${TANK}${L/t>=10?nf(L/t):(L/t).toFixed(1).replace('.',',')} × ${t>=1000?t/1000+' 000':t} L</span>`).join(' ')}
+function harvestLine(m2){const H=META.harvest,s=storm(),vs=vol(m2,s.mm),va=vol(m2,H.annual_mm);
+ return `<b>${vs.toFixed(1).replace('.',',')} m³</b> par orage (${s.mm.toFixed(0)} mm) · <b>${nf(va)} m³/an</b><br><span class="small">soit par an ${tanks(va)}</span>`}
+function harvestHTML(m2,lab){const H=META.harvest,s=storm(),vs=vol(m2,s.mm),va=vol(m2,H.annual_mm);
+ return `<span class="small">${lab} : ${nf(m2)} m² de toits</span><br>Par orage type « ${META.scen[s.k].label} » (${s.mm.toFixed(0)} mm) : <b>${nf(vs)} m³</b><br>${tanks(vs)}<br>Par an (${H.annual_mm} mm) : <b>${nf(va)} m³</b><br>${tanks(va)}`}
+function harvestPanel(){const H=META.harvest,s=storm();const top=PLACES.filter(p=>p.roof).sort((a,b)=>b.roof-a.roof).slice(0,8);
+ const sel=PIN&&PIN.place&&PIN.place.roof?PIN.place:selPlace;
+ $('harv').innerHTML=(sel?`<div class="card hv"><b>${TANK} ${sel.name}</b> (carré ~800 m autour du centre)<br>${harvestHTML(sel.roof,'Toits')}</div>`:'')+
+ `<div class="small">Exemple : maison avec <b>${H.house_m2} m²</b> de toit → ${harvestLine(H.house_m2)}</div>
+ <table class="ht"><tr><th>Quartier (carré ~800 m)</th><th>Toits m²</th><th>m³/orage</th><th>m³/an</th></tr>${top.map(p=>`<tr><td><a href="#" onclick="pinPlace(PLACES[${PLACES.indexOf(p)}]);return false">${p.name}</a></td><td>${nf(p.roof)}</td><td>${nf(vol(p.roof,s.mm))}</td><td>${nf(vol(p.roof,H.annual_mm))}</td></tr>`).join('')}</table>
+ <div class="small">Pluie annuelle : ${H.annual_mm} mm (${H.annual_src} ; ${H.era5_note}). Capture : ${Math.round(H.capture*100)} % (${H.capture_note}). Orage = scénario affiché (${s.mm.toFixed(0)} mm). Cuves = cuves verticales en polyéthylène noir (1 000 à 10 000 L). Surfaces de toits : Microsoft + Google Open Buildings v3 (empreintes, pas de vérification terrain).</div>`}
 
 function loadScript(u){return new Promise((ok,ko)=>{const s=document.createElement('script');s.src=u;s.onload=ok;s.onerror=ko;document.head.appendChild(s)})}
 async function pdf(){if(!window.jspdf)await loadScript('https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js');
@@ -150,8 +173,9 @@ async function pdf(){if(!window.jspdf)await loadScript('https://unpkg.com/jspdf@
  if(img){const c=map.getCanvas();const w=186,h=Math.min(95,w*c.height/c.width);doc.addImage(img,'JPEG',12,y,w,h);doc.setDrawColor(215,48,31);doc.setLineWidth(0.8);doc.circle(12+w/2,y+h/2,2.5);y+=h+6}
  doc.setFontSize(10);doc.setFont(undefined,'bold');doc.text('Scenario',12,y);doc.text('Prof. max',140,y);doc.text('Heures > 10 cm',168,y);doc.setFont(undefined,'normal');y+=5;
  F.rows.forEach(r=>{doc.text(doc.splitTextToSize(r.label,125)[0],12,y);doc.text(r.d.toFixed(2)+' m',140,y);doc.text(String(r.h)+' h',168,y);y+=5.5});
+ if(F.roof!=null){const H=META.harvest;y+=2;doc.text(`Eau recuperable des toits de la cellule (${F.roof} m2, capture ${Math.round(H.capture*100)} %) : ${Math.round(vol(F.roof,H.annual_mm))} m3/an (pluie ${H.annual_mm} mm, CHIRPS)`,12,y);y+=5}
  y+=4;doc.setFontSize(8.5);doc.setTextColor(80);
- const disc='AVERTISSEMENT : cette fiche est issue d\'une simulation numerique indicative (modele hydraulique simplifie, relief Copernicus GLO-30 a 30 m, pluies ERA5 / observations de presse reparties heure par heure, pluies de projet T10/T50/T100 approximatives). Elle ne tient pas compte de l\'etat reel des caniveaux, des remblais recents ni des ouvrages. Ce n\'est PAS un document officiel et ne remplace ni une etude technique ni les avis de l\'ANAM, de la Protection civile ou de la Mairie. Sources : OpenStreetMap (contributeurs), Microsoft/Google Open Buildings, ESA WorldCover, Copernicus DEM, ECMWF ERA5. Site : '+location.origin;
+ const disc='AVERTISSEMENT : cette fiche est issue d\'une simulation numerique indicative (modele hydraulique simplifie, relief Copernicus GLO-30 a 30 m, rues OSM abaissees de 20-40 cm, pluies observees a l\'aeroport (SYNOP 65503) ou par la presse, sinon ERA5, pluies de projet T10/T50/T100 approximatives). Elle ne tient pas compte de l\'etat reel des caniveaux, des remblais recents ni des ouvrages. Ce n\'est PAS un document officiel et ne remplace ni une etude technique ni les avis de l\'ANAM, de la Protection civile ou de la Mairie. Sources : OpenStreetMap (contributeurs), Microsoft/Google Open Buildings, ESA WorldCover, Copernicus DEM, OGIMET/Iowa Mesonet, ECMWF ERA5, CHIRPS. Site : '+location.origin;
  doc.text(doc.splitTextToSize(disc,186),12,y);doc.save(`fiche-inondation-ouaga-${F.lat.toFixed(4)}_${F.lon.toFixed(4)}.pdf`)}
 
 // ---------- Liens de localisation ----------

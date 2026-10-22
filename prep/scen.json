@@ -1,10 +1,116 @@
 {
-"2020-09-05":{"label":"5 sept. 2020 (90,5 mm observés, Somgandé)","start":"2020-09-05T03:00","rain":[0,0,0,1,10,35,28,12,4.5],"src":"Observé: 90,5 mm 04h30-08h00 (station Somgandé, L'Observateur Paalga). Répartition horaire reconstituée (synthétique)."},
-"2022-08-03":{"label":"3 août 2022 (Wemtenga, Zone 1)","start":"2022-08-03T13:00","rain":[0,0,4,19,14,7,3],"src":"Cumul 47 mm = max 24h d'août 2022 à la station 65503 (le 4, infoclimat) ; horaire calé sur ERA5 (pic 15h UTC). Estimation."},
-"2024-08-16":{"label":"16 août 2024 (Rimkiéta, Toécin)","start":"2024-08-16T13:00","rain":[0,0,6,20,14,6,4],"src":"Cumul supposé 50 mm (borne: max 24h août 2024 = 56 mm le 7) ; forme horaire ERA5 (pic 16h UTC). Estimation."},
-"2025-07-24":{"label":"24 juil. 2025 (Kalgondin)","start":"2025-07-24T13:00","rain":[0,0,4,12,11,5,3],"src":"Cumul supposé 35 mm (borne: max 24h juil. 2025 = 41 mm le 22) ; forme ERA5 (pic 16-17h UTC). Estimation."},
-"2026-08-03":{"label":"Nuit du 2-3 août 2026 (Bonheur-Ville, Nagrin)","start":"2026-08-03T01:00","rain":[0,2,6,14,13,6,3,1],"src":"Cumul supposé 45 mm (borne: max 24h août 2026 = 46 mm le 19) ; forme ERA5 (pic 04-06h UTC). Estimation."},
-"T10":{"label":"Pluie de projet 10 ans (~100 mm)","start":"2000-01-01T00:00","rain":[0,8,38,30,14,7,3],"src":"Pluie de projet synthétique ~100 mm (ordre de grandeur Gumbel pour Ouaga, à confirmer avec IDF ANAM)."},
-"T50":{"label":"Pluie de projet 50 ans (~140 mm)","start":"2000-01-01T00:00","rain":[0,11,52,42,20,10,5],"src":"Synthétique ~140 mm, à confirmer."},
-"T100":{"label":"Pluie de projet 100 ans (~165 mm, proche 1er sept. 2009 en intensité)","start":"2000-01-01T00:00","rain":[0,13,62,50,23,11,6],"src":"Synthétique ~165 mm, à confirmer. Pour mémoire 1er sept. 2009: 263 mm."}
+"2020-09-05": {
+"label": "5 sept. 2020 (90,5 mm observés, Somgandé)",
+"start": "2020-09-05T03:00",
+"rain": [
+0,
+0,
+0,
+1,
+10,
+35,
+28,
+12,
+4.5
+],
+"src": "Cumul 90,5 mm observé 04h30-08h00 à la station Somgandé (L'Observateur Paalga), conservé car mesuré dans la zone sinistrée. Aéroport DFFD (SYNOP 65503, OGIMET) : 6 mm avant 06 UTC + 62 mm 06-18 UTC, orage (ww 95) à 06 et 09 UTC. Répartition horaire reconstituée (synthétique)."
+},
+"2022-08-03": {
+"label": "3 août 2022 (Wemtenga, Zone 1)",
+"start": "2022-08-03T13:00",
+"rain": [
+0,
+0,
+2.6,
+12.5,
+9.2,
+4.6,
+2.0
+],
+"src": "Cumul 31 mm observé à l'aéroport DFFD (SYNOP 65503, 24 h jusqu'au 4 août 06 UTC, OGIMET). Pas de cumuls horaires : forme horaire ERA5 (pic 15 UTC) remise à l'échelle. Ancienne estimation : 47 mm."
+},
+"2024-08-16": {
+"label": "16 août 2024 (Rimkiéta, Toécin)",
+"start": "2024-08-16T13:00",
+"rain": [
+0,
+29,
+24,
+5,
+0
+],
+"src": "Observé aéroport DFFD (SYNOP 65503, OGIMET) : 29 mm 12-15 UTC (0 à 13 et 14 h → 14-15 UTC), 24 mm 15-16, 5 mm 16-17 ; total 12 h 58 mm. Orage ww 95. Ancienne estimation : 50 mm."
+},
+"2025-07-24": {
+"label": "24 juil. 2025 (Kalgondin)",
+"start": "2025-07-24T13:00",
+"rain": [
+3,
+0,
+0.3,
+19,
+12.7,
+0,
+2
+],
+"src": "Observé aéroport DFFD (SYNOP 65503, OGIMET) : cumuls horaires 3 ; 0,3 ; 19 mm, reste du cumul 12 h (35 mm) placé 17-18 UTC, +2 mm 19-20 UTC. Total 37 mm. Ancienne estimation : 35 mm."
+},
+"2026-08-03": {
+"label": "Nuit du 2-3 août 2026 (Bonheur-Ville, Nagrin)",
+"start": "2026-08-02T23:00",
+"rain": [
+2,
+0.5,
+0,
+0.5,
+11,
+10,
+0,
+0.2,
+0.2
+],
+"src": "Observé aéroport DFFD (SYNOP 65503, OGIMET ; METAR TSRA, Iowa Mesonet) : 2 mm avant 00 UTC, 11 mm 03-04, 10 mm 04-05 UTC ; 24 h = 24 mm. Ancienne estimation : 45 mm (l'aéroport a reçu moins que les quartiers touchés ?)."
+},
+"T10": {
+"label": "Pluie de projet 10 ans (~100 mm)",
+"start": "2000-01-01T00:00",
+"rain": [
+0,
+8,
+38,
+30,
+14,
+7,
+3
+],
+"src": "Pluie de projet synthétique ~100 mm (ordre de grandeur Gumbel pour Ouaga, à confirmer avec IDF ANAM)."
+},
+"T50": {
+"label": "Pluie de projet 50 ans (~140 mm)",
+"start": "2000-01-01T00:00",
+"rain": [
+0,
+11,
+52,
+42,
+20,
+10,
+5
+],
+"src": "Synthétique ~140 mm, à confirmer."
+},
+"T100": {
+"label": "Pluie de projet 100 ans (~165 mm, proche 1er sept. 2009 en intensité)",
+"start": "2000-01-01T00:00",
+"rain": [
+0,
+13,
+62,
+50,
+23,
+11,
+6
+],
+"src": "Synthétique ~165 mm, à confirmer. Pour mémoire 1er sept. 2009: 263 mm."
+}
 }

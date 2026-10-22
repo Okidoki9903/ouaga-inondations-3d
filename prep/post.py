@@ -43,10 +43,15 @@ for k in order:
     for p in places:
         i,j=p['c'];w=hm[max(i-rr,0):i+rr,max(j-rr,0):j+rr]
         p['stats'][k]=[round(float(w.max()) if w.size else 0,2),round(float((w>0.2).sum())*R*R/1e4,1)]
+# v2: eau récupérable - surface de toits (m²) dans la même fenêtre ~800 m x 800 m que les stats
+bfG=G['bf'].astype('f4')
+for p in places:
+    i,j=p['c'];w=bfG[max(i-rr,0):i+rr,max(j-rr,0):j+rr];p['roof']=int(round(float(w.sum())*R*R,-2))
 for p in places: p.pop('c')
 places.sort(key=lambda p:p['name'])
 json.dump(places,open(A+'places.json','w'),ensure_ascii=False)
 meta['about']=open('about.html').read()
+H_=json.load(open('obs/harvest.json'));meta['harvest']=H_
 json.dump(meta,open(A+'meta.json','w'),ensure_ascii=False)
 # validation table
 med={k:np.median([p['stats'][k][1] for p in places]) for k in order}

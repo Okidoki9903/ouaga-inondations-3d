@@ -11,7 +11,8 @@ def enc(a):
     return Image.fromarray(np.clip(np.round(o*100),0,255).astype('u1'),'L')
 def job(a):
     k,i=a;r=np.load(f'res_{k}.npz');d=(r['d'][i] if i!='max' else r['hmax']).astype('f4');d[wm]=0
-    os.makedirs(A+k,exist_ok=True);enc(d).save(A+f'{k}/{i}.png',optimize=True);return a
+    os.makedirs(A+k,exist_ok=True);im=enc(d);im.save(A+f'{k}/{i}.png',optimize=True)
+    os.makedirs(A[:-2]+'dm/'+k,exist_ok=True);im.resize((OW//2,OH//2),Image.BOX).save(A[:-2]+f'dm/{k}/{i}.png',optimize=True);return a
 if __name__=='__main__':
     jobs=[]
     for k in order:
