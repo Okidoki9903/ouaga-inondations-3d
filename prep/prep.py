@@ -15,7 +15,9 @@ W=int((x1-x0)/R);H=int((y1-y0)/R)
 T=from_origin(x0,y1,R,R);crs='EPSG:32630'
 print('grid',W,H)
 z=np.zeros((H,W),'f4')
-with rasterio.open(D+'cop30_N12W002.tif') as s:
+import os
+DEM=os.environ.get('DEM','data/ext/N12W002_FABDEM_V1-2.tif')  # v3: FABDEM V1-2 (CC BY-NC-SA 4.0); v1/v2: cop30_N12W002.tif
+with rasterio.open(D+DEM) as s:
     reproject(rasterio.band(s,1),z,dst_transform=T,dst_crs=crs,resampling=Resampling.bilinear)
 wc=np.zeros((H,W),'u1')
 with rasterio.open(D+'data/wc.tif') as s:

@@ -13,32 +13,53 @@ const map=new maplibregl.Map({container:'map',style,...OV,maxPitch:75,preserveDr
 map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
 // ---- couche eau : texture de profondeur (cm, 8 bits) interpolée bilinéairement par le GPU, isoligne lissée dans le shader
 class WaterLayer extends deck.BitmapLayer{getShaders(){const s=super.getShaders();s.inject={'fs:#main-end':`
- float d=texture(bitmapTexture,uv).r*2.55; float night=tintColor.r; float thr=tintColor.b; float edgeK=tintColor.g;
- float px=max(fwidth(d),1e-4); float a=smoothstep(thr-px,thr+px,d);
+ // R = heure i, G = heure i+1 (cm/2.55) ; transparentColor.r = fraction entre les deux (montée progressive), .g = intensité de pluie, desaturate = phase d'animation [0,1)
+ vec4 tx=texture(bitmapTexture,uv); float fr=transparentColor.r; float rain=transparentColor.g; float ph=desaturate*6.2831853;
+ float d=mix(tx.r,tx.g,fr)*2.55; float night=tintColor.r; float thr=tintColor.b; float edgeK=tintColor.g;
+ float px=max(fwidth(d),1e-4); float a=smoothstep(thr-px*1.5,thr+px*1.5,d);
+ vec2 g=vec2(dFdx(d),dFdy(d)); float gl=length(g);
+ vec2 p=gl_FragCoord.xy;
+ // ondulations animées (normales procédurales), plus fortes sous la pluie
+ float w1=sin(p.x*0.11+p.y*0.07+ph*3.0), w2=sin(p.x*-0.05+p.y*0.13+ph*2.0), w3=sin((p.x+p.y)*0.21-ph*5.0);
+ vec3 nrm=normalize(vec3((w1*0.6+w3*rain*0.8)*0.35,(w2*0.6+w3*rain*0.8)*0.35,1.0));
+ float spec=pow(max(dot(reflect(normalize(vec3(-0.3,-0.4,-1.0)),nrm),vec3(0.0,0.0,1.0)),0.0),24.0);
+ // scintillement d'écoulement le long de la pente de profondeur (canaux)
+ vec2 dir=gl>1e-5?g/gl:vec2(0.0); float flow=smoothstep(0.25,0.8,d)*smoothstep(0.002,0.02,gl);
+ float st=0.5+0.5*sin(dot(p,dir)*0.35-ph*4.0);
  vec3 shallow=mix(vec3(0.42,0.88,1.0),vec3(0.25,0.75,1.0),night); vec3 deep=mix(vec3(0.02,0.42,0.86),vec3(0.15,0.45,1.0),night);
- vec3 col=mix(shallow,deep,smoothstep(0.1,1.2,d))*(1.0+0.6*night);
- float al=mix(0.50,0.82,smoothstep(0.08,1.0,d))+0.12*night;
+ vec3 muddy=vec3(0.55,0.48,0.36);
+ vec3 col=mix(shallow,deep,smoothstep(0.1,1.2,d));col=mix(col,muddy*0.9+col*0.1,0.25*smoothstep(0.05,0.6,d));
+ col*= (1.0+0.6*night)*(0.92+0.08*nrm.x); col+=vec3(spec*0.55*(1.0-0.5*night)); col+=vec3(flow*st*0.18);
+ float al=mix(0.45,0.82,smoothstep(0.05,1.0,d))+0.12*night;
  float e=1.0-smoothstep(0.0,1.6*px,abs(d-thr));
- vec2 sc=gl_FragCoord.xy; float dash=step(0.5,fract((sc.x+sc.y)/14.0));
+ float dash=step(0.5,fract((p.x+p.y)/14.0));
  e*=dash*edgeK; col=mix(col,vec3(1.0),e); al=max(al*a,e*0.95);
  if(al<0.01) discard; fragColor=vec4(col,al*opacity);`};return s}}
 WaterLayer.layerName='WaterLayer';
 const overlay=new deck.MapboxOverlay({interleaved:true,layers:[]});map.addControl(overlay);
 const IMG={};function img(k,i){const u=`data/${MOB?'dm':'d'}/${k}/${i}.png`;if(!IMG[u]){IMG[u]=new Promise(r=>{const m=new Image();m.crossOrigin='anonymous';m.onload=()=>r(m);m.src=u})}return IMG[u]}
-let wA={i:null,img:null,op:1},wB={i:null,img:null,op:0},fadeT=0,NIGHT=0;
+// deux heures consécutives empaquetées dans une texture (R=i, G=i+1) → interpolation GPU, l'eau monte progressivement
+const PAIR={};let PKEYS=[];
+async function pair(k,a,b){const key=k+a+'|'+b;if(PAIR[key])return PAIR[key];
+ const p=(async()=>{const[A,B]=await Promise.all([img(k,a),img(k,b)]);const w=A.width,h=A.height;
+  const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d',{willReadFrequently:true});
+  x.drawImage(A,0,0);const da=x.getImageData(0,0,w,h);x.clearRect(0,0,w,h);x.drawImage(B,0,0);const db=x.getImageData(0,0,w,h);
+  const o=da.data,q=db.data;for(let n=0;n<o.length;n+=4){o[n+1]=q[n];o[n+2]=0;o[n+3]=255}x.putImageData(da,0,0);return c})();
+ PAIR[key]=p;PKEYS.push(key);while(PKEYS.length>(MOB?4:8))delete PAIR[PKEYS.shift()];return p}
+let W={img:null,fr:0},NIGHT=0,RAIN=0;
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function startOf(S){return Date.parse((S.start.startsWith('2000')?'2000-01-01T15:00':S.start)+'Z')}
 function nightAt(t){const h=new Date(t).getUTCHours()+new Date(t).getUTCMinutes()/60;return h<5.5||h>19.5?1:h<6.5?6.5-h:h>18.5?h-18.5:0}
 function layers(){const L=[];const Z=map.getZoom();const B=META.bounds;
- for(const w of [wB,wA]) if(w.img&&w.op>0.01)L.push(new WaterLayer({id:'w'+(w===wA?'A':'B'),bounds:B,image:w.img,opacity:w.op,tintColor:[NIGHT*255,Z>=14.5?255:Z>=13.5?(Z-13.5)*255:0,(Z>=15?0.06:Z>=13?0.06+(15-Z)*0.03:0.12)*255],beforeId:'b-ao',textureParameters:{minFilter:'linear',magFilter:'linear'},updateTriggers:{}}));
+ if(W.img)L.push(new WaterLayer({id:'w',bounds:B,image:W.img,opacity:1,desaturate:RM?0:(performance.now()/6000)%1,transparentColor:[W.fr*255,Math.min(1,RAIN)*255,0,255],tintColor:[NIGHT*255,Z>=14.5?255:Z>=13.5?(Z-13.5)*255:0,(Z>=15?0.06:Z>=13?0.06+(15-Z)*0.03:0.12)*255],beforeId:'b-ao',textureParameters:{minFilter:'linear',magFilter:'linear'}}));
  if(PIN)L.push(new deck.ColumnLayer({id:'pin',data:[PIN],getPosition:d=>[d.lon,d.lat],radius:MOB?14:9,elevationScale:1,getElevation:140,getFillColor:[249,115,22,235],extruded:true,material:false}),
   new deck.ScatterplotLayer({id:'pinglow',data:[PIN],getPosition:d=>[d.lon,d.lat],radiusUnits:'meters',getRadius:38,getFillColor:[249,115,22,90],stroked:true,getLineColor:[255,180,90,220],lineWidthMinPixels:2}));
  if(HV&&PLACES){const H=META.harvest;L.push(new deck.ScatterplotLayer({id:'hv',data:PLACES.filter(p=>p.roof),getPosition:d=>[d.lon,d.lat],radiusUnits:'meters',getRadius:d=>Math.sqrt(vol(d.roof,H.annual_mm))*2.2,getFillColor:[17,24,39,120],stroked:true,getLineColor:[34,211,238,230],lineWidthMinPixels:1.5,pickable:true,onClick:i=>{pinPlace(i.object);return true}}))}
  overlay.setProps({layers:L})}
-async function showFrame(i){const S=META.scen[cur];const key=$('maxck').checked?'max':i;const im=await img(cur,key);
- if(wA.i===cur+key)return; wB={...wA};wA={i:cur+key,img:im,op:0};fadeT=performance.now();
- for(const n of [i+1,i+2]) if(n<S.hours)img(cur,n);
- const step=()=>{const f=Math.min(1,(performance.now()-fadeT)/450);wA.op=f;wB.op=1-f;layers();if(f<1)requestAnimationFrame(step)};step()}
-function setLight(n){NIGHT=n;map.setPaintProperty('sat','raster-brightness-max',1-0.72*n);map.setPaintProperty('sat','raster-saturation',-0.45*n);
+let FQ=0;async function showFrame(f){const S=META.scen[cur];const mx=$('maxck').checked;const i=Math.min(Math.floor(f),S.hours-1),j=Math.min(i+1,S.hours-1);
+ const q=++FQ;const c=mx?await pair(cur,'max','max'):await pair(cur,i,j);if(q!==FQ)return;W.img=c;W.fr=mx?0:Math.min(1,f-i);
+ if(!mx&&j+1<S.hours)pair(cur,j,Math.min(j+1,S.hours-1));layers()}
+function setLight(n){NIGHT=n;const r=Math.min(1,RAIN);map.setPaintProperty('sat','raster-brightness-max',(1-0.72*n)*(1-0.38*r));map.setPaintProperty('sat','raster-saturation',-0.45*n-0.4*r*(1-n));map.setPaintProperty('sat','raster-contrast',-0.15*r);
  const mix=(a,b)=>'#'+a.map((x,j)=>Math.round(x+(b[j]-x)*n).toString(16).padStart(2,'0')).join('');
  map.setPaintProperty('b3d','fill-extrusion-color',mix([233,227,215],[58,64,82]));map.setPaintProperty('b-edge','line-color',n>0.5?'#0b0f1a':'#3b3b3b')}
 map.on('load',async()=>{
@@ -75,7 +96,8 @@ const fmt=x=>x>=1000?(x/1000).toFixed(1).replace('.',',')+' k':String(Math.round
 function draw(){if(!META)return;const S=META.scen[cur],T=STATS[cur];const f=+$('hour').value,i=Math.round(f);const mx=$('maxck').checked;
  const t=startOf(S)+(f+1)*3600e3;const syn=S.start.startsWith('2000');const d=new Date(t);
  $('hl').textContent=mx?'Maximum de l\'événement':(syn?`Pluie de projet · H+${(f+1).toFixed(0)} · ${String(d.getUTCHours()).padStart(2,'0')}h`:d.toLocaleString('fr-FR',{timeZone:'UTC',weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+' (heure de Ouaga)');
- setLight(mx?0:nightAt(t));showFrame(i);
+ const rr=(S.rain[Math.floor(f)]||0)*(1-(f%1))+(S.rain[Math.floor(f)+1]||0)*(f%1);RAIN=mx?0:Math.min(1,rr/30);RAINMM=mx?0:rr;
+ setLight(mx?0:nightAt(t));showFrame(f);
  const cum=S.rain.slice(0,i+1).reduce((a,b)=>a+b,0),tot=S.rain.reduce((a,b)=>a+b,0);
  $('s_area').textContent=T.area[i].toFixed(1).replace('.',',');$('s_bld').textContent=fmt(T.bld[i]);$('s_rain').textContent=(S.rain[i]||0).toFixed(1).replace('.',',');$('s_lake').textContent='+'+Math.round(T.lake[i]-T.lake[0]);
  $('s_cum').textContent=`${cum.toFixed(0)} / ${tot.toFixed(0)} mm`;
@@ -86,7 +108,7 @@ function draw(){if(!META)return;const S=META.scen[cur],T=STATS[cur];const f=+$('
   const now=mx?Math.max(...sr):sr[i];$('pindepth').innerHTML=`${Math.round(now*100)} cm <small>d'eau ${mx?'(max)':'en ce moment'}</small>`;
   const pk=sr.indexOf(Math.max(...sr));$('pinwhen').textContent=`Max ${Math.round(sr[pk]*100)} cm à H+${pk+1}`;
   $('pinchart').innerHTML=`<polygon points="0,84 ${sr.map((y,x)=>X(x)+','+Y(y)).join(' ')} 300,84" fill="#06b6d422"/><polyline points="${sr.map((y,x)=>X(x)+','+Y(y)).join(' ')}" fill="none" stroke="#06b6d4" stroke-width="2"/><line x1="${X(f)}" x2="${X(f)}" y1="0" y2="90" stroke="#f9731688"/><circle cx="${X(f)}" cy="${Y(sr[Math.min(i,sr.length-1)])}" r="5" fill="#f97316" stroke="#fff" stroke-width="2"/>`}}
-$('hour').oninput=draw;$('maxck').onchange=()=>{wA.i=null;draw()};
+$('hour').oninput=draw;$('maxck').onchange=()=>draw();
 $('lclose').onclick=()=>{$('left').classList.add('hidden');PIN=null;layers()};$('rtog').onclick=()=>{$('right').classList.toggle('min');$('rtog').textContent=$('right').classList.contains('min')?'▴':'▾'};
 if(MOB){$('right').classList.add('min');$('rtog').textContent='▴'}
 let last=0;function tick(ts){if(!timer)return;if(last){const h=$('hour');let v=+h.value+(ts-last)/1000*0.5*(+$('speed').value);if(v>+h.max)v=0;h.value=v;draw()}last=ts;requestAnimationFrame(tick)}
@@ -175,7 +197,7 @@ async function pdf(){if(!window.jspdf)await loadScript('https://unpkg.com/jspdf@
  F.rows.forEach(r=>{doc.text(doc.splitTextToSize(r.label,125)[0],12,y);doc.text(r.d.toFixed(2)+' m',140,y);doc.text(String(r.h)+' h',168,y);y+=5.5});
  if(F.roof!=null){const H=META.harvest;y+=2;doc.text(`Eau recuperable des toits de la cellule (${F.roof} m2, capture ${Math.round(H.capture*100)} %) : ${Math.round(vol(F.roof,H.annual_mm))} m3/an (pluie ${H.annual_mm} mm, CHIRPS)`,12,y);y+=5}
  y+=4;doc.setFontSize(8.5);doc.setTextColor(80);
- const disc='AVERTISSEMENT : cette fiche est issue d\'une simulation numerique indicative (modele hydraulique simplifie, relief Copernicus GLO-30 a 30 m, rues OSM abaissees de 20-40 cm, pluies observees a l\'aeroport (SYNOP 65503) ou par la presse, sinon ERA5, pluies de projet T10/T50/T100 approximatives). Elle ne tient pas compte de l\'etat reel des caniveaux, des remblais recents ni des ouvrages. Ce n\'est PAS un document officiel et ne remplace ni une etude technique ni les avis de l\'ANAM, de la Protection civile ou de la Mairie. Sources : OpenStreetMap (contributeurs), Microsoft/Google Open Buildings, ESA WorldCover, Copernicus DEM, OGIMET/Iowa Mesonet, ECMWF ERA5, CHIRPS. Site : '+location.origin;
+ const disc='AVERTISSEMENT : cette fiche est issue d\'une simulation numerique indicative (modele hydraulique simplifie, relief FABDEM 30 m (CC BY-NC-SA 4.0), rues OSM abaissees de 20-40 cm, pluies observees a l\'aeroport (SYNOP 65503) ou par la presse, sinon ERA5, pluies de projet T10/T50/T100 approximatives). Elle ne tient pas compte de l\'etat reel des caniveaux, des remblais recents ni des ouvrages. Ce n\'est PAS un document officiel et ne remplace ni une etude technique ni les avis de l\'ANAM, de la Protection civile ou de la Mairie. Sources : OpenStreetMap (contributeurs), Microsoft/Google Open Buildings, ESA WorldCover, FABDEM (Univ. Bristol), FABDEM (Univ. Bristol, CC BY-NC-SA 4.0), Copernicus DEM, OGIMET/Iowa Mesonet, ECMWF ERA5, CHIRPS. Site : '+location.origin;
  doc.text(doc.splitTextToSize(disc,186),12,y);doc.save(`fiche-inondation-ouaga-${F.lat.toFixed(4)}_${F.lon.toFixed(4)}.pdf`)}
 
 // ---------- Liens de localisation ----------
@@ -197,3 +219,22 @@ $('paste').onclick=async()=>{let t='';try{t=await navigator.clipboard.readText()
 $('geo').onclick=()=>{if(!navigator.geolocation){toast('Géolocalisation indisponible sur cet appareil.',true);return}toast('Recherche de votre position…');
  navigator.geolocation.getCurrentPosition(pos=>{const p={lat:pos.coords.latitude,lon:pos.coords.longitude};if(!inCov(p)){toast('Votre position est hors de la zone couverte (Ouagadougou).',true);return}selPlace=null;pinAt(p.lon,p.lat,null,true)},
   e=>toast(e.code===1?'Accès à la position refusé.':'Position introuvable.',true),{enableHighAccuracy:true,timeout:15000})};
+
+// ---------- Pluie animée (canvas 2D au-dessus de la carte) ----------
+let RAINMM=0;const RC=document.createElement('canvas');RC.id='rain';document.body.appendChild(RC);const rx=RC.getContext('2d');
+function rsz(){const dpr=Math.min(devicePixelRatio||1,MOB?1.5:2);RC.width=innerWidth*dpr;RC.height=innerHeight*dpr;rx.setTransform(dpr,0,0,dpr,0,0)}addEventListener('resize',rsz);rsz();
+const DROPS=[],SPL=[];const NMAX=MOB?260:800;
+for(let n=0;n<NMAX;n++)DROPS.push({x:Math.random(),y:Math.random(),v:0.6+Math.random()*0.6,l:0.6+Math.random()*0.8});
+let lt=0,lastW=0;
+function rainLoop(ts){requestAnimationFrame(rainLoop);if(MOB&&ts-lt<33)return;const dt=Math.min(0.05,(ts-lt)/1000||0.016);lt=ts;
+ const Wd=innerWidth,Hd=innerHeight;rx.clearRect(0,0,Wd,Hd);
+ const I=RM?0:Math.min(1,RAINMM/30);const n=Math.round(NMAX*Math.min(1,Math.sqrt(I)));
+ if(n>0){const ang=0.18,len=(10+26*I);rx.strokeStyle=`rgba(210,225,240,${0.25+0.35*I})`;rx.lineWidth=MOB?1:1.2;rx.beginPath();
+  for(let k=0;k<n;k++){const d=DROPS[k];d.y+=d.v*dt*(1.4+1.6*I);d.x+=d.v*dt*0.25;if(d.y>1){d.y-=1.05;d.x=Math.random();if(Math.random()<0.25*I&&SPL.length<(MOB?40:120))SPL.push({x:Math.random()*Wd,y:Hd*(0.3+0.7*Math.random()),t:0})}if(d.x>1)d.x-=1;
+   const X=d.x*Wd,Y=d.y*Hd;rx.moveTo(X,Y);rx.lineTo(X-len*ang*d.l,Y-len*d.l)}rx.stroke()}
+ // éclaboussures / ronds dans l'eau
+ rx.strokeStyle='rgba(230,240,255,0.5)';rx.lineWidth=1;
+ for(let k=SPL.length-1;k>=0;k--){const s=SPL[k];s.t+=dt*2.2;if(s.t>1){SPL.splice(k,1);continue}rx.globalAlpha=1-s.t;rx.beginPath();rx.ellipse(s.x,s.y,2+10*s.t,1+4*s.t,0,0,6.283);rx.stroke()}rx.globalAlpha=1;
+ // eau vivante : ré-rendu de la couche ~20-30 i/s
+ if(!RM&&W.img&&ts-lastW>(MOB?66:40)){lastW=ts;layers()}}
+requestAnimationFrame(rainLoop);
